@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.asramaku.model.DummyData
-import com.example.asramaku.model.SlotData
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,10 +37,8 @@ fun GantiPiketScreen(
 
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
-    // 🧩 Ambil daftar slot dari DummyData
     val daftarSlot = DummyData.slotPiketList
 
-    // 🔎 Filter hasil pencarian
     val filteredSlot = daftarSlot.filter {
         it.tanggal.contains(searchQuery.text, ignoreCase = true)
     }
@@ -79,7 +76,6 @@ fun GantiPiketScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // 🔍 Search Bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -102,7 +98,6 @@ fun GantiPiketScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 📋 Daftar Slot
             if (filteredSlot.isNotEmpty()) {
                 filteredSlot.forEach { slot ->
                     Box(
@@ -136,7 +131,8 @@ fun GantiPiketScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(buttonColor)
                                     .clickable {
-                                        println("Slot tanggal ${slot.tanggal} diambil")
+                                        // 👉 Navigasi ke halaman AmbilSlot
+                                        navController.navigate("ambil_slot_screen")
                                     }
                                     .padding(horizontal = 16.dp, vertical = 6.dp),
                                 contentAlignment = Alignment.Center

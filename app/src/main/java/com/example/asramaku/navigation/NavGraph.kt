@@ -17,9 +17,13 @@ import com.example.asramaku.piket.jadwalpiket.BelumDikerjakanScreen
 import com.example.asramaku.piket.rekap.DetailPiketSayaScreen
 import com.example.asramaku.piket.RekapPiketSayaScreen
 import com.example.asramaku.piket.jadwalpiket.GantiPiketScreen
+import com.example.asramaku.piket.slot.AmbilSlotScreen
 import java.time.LocalDate
 
-private const val OPTIONAL_FOTO_URI = "detail_piket_screen/{nama}/{tanggal}/{fotoUri?}"
+// 🔹 Tambahan import modul laporan
+import com.example.asramaku.laporan.*
+import com.example.asramaku.model.*
+import com.example.asramaku.ui.theme.*
 
 sealed class Screen(val route: String) {
     object Splash : Screen("splash_screen")
@@ -34,7 +38,6 @@ sealed class Screen(val route: String) {
     object Duty : Screen("duty_screen")
     object Report : Screen("report_screen")
     object Payment : Screen("payment_screen")
-
     object JadwalPiket : Screen("jadwal_piket_screen")
 
     object BelumDikerjakan : Screen("belum_dikerjakan_screen/{nama}/{tanggal}") {
@@ -42,12 +45,14 @@ sealed class Screen(val route: String) {
             "belum_dikerjakan_screen/$nama/$tanggal"
     }
 
-    object DetailPiketSaya : Screen(OPTIONAL_FOTO_URI) {
+    // ✅ Diperbaiki: route DetailPiketSaya biar fleksibel (fotoUri opsional)
+    object DetailPiketSaya : Screen("detail_piket_screen/{nama}/{tanggal}?fotoUri={fotoUri}") {
         fun createRoute(nama: String, tanggal: String, fotoUri: String? = null): String {
-            return if (!fotoUri.isNullOrEmpty())
-                "detail_piket_screen/$nama/$tanggal/$fotoUri"
-            else
-                "detail_piket_screen/$nama/$tanggal/"
+            return if (!fotoUri.isNullOrEmpty()) {
+                "detail_piket_screen/$nama/$tanggal?fotoUri=$fotoUri"
+            } else {
+                "detail_piket_screen/$nama/$tanggal"
+            }
         }
     }
 
@@ -57,12 +62,8 @@ sealed class Screen(val route: String) {
     }
 
     object RekapPiket : Screen("rekap_piket_screen")
-    companion object {
-        val DetailPiket: Any
-            get() {
-                TODO()
-            }
-    }
+
+    object AmbilSlot : Screen("ambil_slot_screen")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -78,7 +79,7 @@ fun NavGraph(navController: NavHostController) {
     ) {
 
         // =====================================================
-        // BAGIAN ASLI (tidak diubah)
+        // BAGIAN ASLI
         // =====================================================
 
         composable(route = Screen.Splash.route) {
@@ -139,8 +140,9 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
+        // ✅ Bagian ini diperbaiki biar route & argumen sinkron
         composable(
-            route = Screen.DetailPiketSaya.route,
+            route = "detail_piket_screen/{nama}/{tanggal}?fotoUri={fotoUri}",
             arguments = listOf(
                 navArgument("nama") { type = NavType.StringType },
                 navArgument("tanggal") { type = NavType.StringType },
@@ -184,6 +186,13 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
+        // ✅ Halaman Ambil Slot
+        composable(route = Screen.AmbilSlot.route) {
+            AmbilSlotScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
         composable(route = Screen.Report.route) {
             ReportScreen(navController = navController)
         }
@@ -193,7 +202,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
         // =====================================================
-        // 🔹 BAGIAN TAMBAHAN (FITUR PEMBAYARAN)
+        // 🔹 FITUR PEMBAYARAN
         // =====================================================
 
         composable("daftar_tagihan") {
@@ -306,6 +315,46 @@ fun NavGraph(navController: NavHostController) {
             } else {
                 Text("Data tidak ditemukan")
             }
+        }
+
+        // =====================================================
+        // 🔹 FITUR LAPORAN KERUSAKAN
+        // =====================================================
+
+        composable("dashboard") {
+            ReportScreen(navController = navController)
+        }
+
+        composable("buat_laporan") {
+            BuatLaporan(navController = navController)
+        }
+
+        composable("daftar_laporan") {
+            DaftarLaporan(navController = navController)
+        }
+
+        composable(
+            route = "detail_laporan/{laporanId}",
+            arguments = listOf(
+                navArgument("laporanId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val laporanId = backStackEntry.arguments?.getString("laporanId") ?: ""
+            DetailLaporan(navController = navController, laporanId = laporanId)
+        }
+
+        composable(
+            route = "edit_laporan/{laporanId}",
+            arguments = listOf(
+                navArgument("laporanId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val laporanId = backStackEntry.arguments?.getString("laporanId") ?: ""
+            EditLaporan(navController = navController, laporanId = laporanId)
+        }
+
+        composable("notifikasi") {
+            Notifikasi(navController = navController)
         }
     }
 }

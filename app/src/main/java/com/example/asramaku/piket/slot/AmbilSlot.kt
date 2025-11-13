@@ -1,6 +1,5 @@
 package com.example.asramaku.piket.slot
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,13 +23,12 @@ fun AmbilSlotScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // State awal
     var nama by remember { mutableStateOf("-") }
     var isSlotKosong by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
+            TopAppBar(
                 title = {
                     Text(
                         text = "Slot Piket Tersedia",
@@ -50,7 +48,7 @@ fun AmbilSlotScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFFFFECCC)
                 )
             )
@@ -67,7 +65,6 @@ fun AmbilSlotScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Kartu Slot
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF97C8C4)),
                 shape = RoundedCornerShape(12.dp),
@@ -106,7 +103,6 @@ fun AmbilSlotScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Tombol Ambil Slot
             Button(
                 onClick = {
                     if (isSlotKosong) {
@@ -134,14 +130,4 @@ fun AmbilSlotScreen(
             }
         }
     }
-}
-
-private fun TopAppBarDefaults.smallTopAppBarColors(containerColor: Color) {
-
-
-}
-
-@Composable
-fun SmallTopAppBar(title: @Composable (() -> Unit), navigationIcon: @Composable (() -> Unit), colors: Unit) {
-    TODO("Not yet implemented")
 }

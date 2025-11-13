@@ -45,7 +45,7 @@ fun JadwalPiketScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    // 📅 Daftar tanggal jadwal
+    // Daftar tanggal jadwal
     val jadwalList = listOf(
         "2025-10-28",
         "2025-10-30",
@@ -95,7 +95,7 @@ fun JadwalPiketScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 🔍 Search Bar
+            // Search Bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -127,13 +127,13 @@ fun JadwalPiketScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 🧾 Daftar Jadwal
+            // Daftar Jadwal
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 filteredList.forEach { tanggalStr ->
                     val tanggalPiket = LocalDate.parse(tanggalStr)
                     val formatterDisplay = DateTimeFormatter.ofPattern("dd - MM - yyyy")
 
-                    // 🔹 Tentukan status
+                    // Tentukan status
                     val status = when {
                         currentDate.isBefore(tanggalPiket) -> "Belum Dikerjakan"
                         currentDate.isEqual(tanggalPiket) && currentTime.isBefore(LocalTime.of(17, 0)) -> "Belum Dikerjakan"
@@ -173,7 +173,7 @@ fun JadwalPiketScreen(
                                 )
                             }
 
-                            // 🔘 Tombol dinamis berdasarkan status
+                            // Tombol dinamis
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
@@ -181,7 +181,6 @@ fun JadwalPiketScreen(
                                     .padding(horizontal = 10.dp, vertical = 6.dp)
                                     .clickable {
                                         if (status == "Belum Dikerjakan") {
-                                            // Navigasi ke BelumDikerjakanScreen
                                             navController.navigate(
                                                 Screen.BelumDikerjakan.createRoute(
                                                     nama = namaLogin,
@@ -189,7 +188,6 @@ fun JadwalPiketScreen(
                                                 )
                                             )
                                         } else if (status == "Ganti Piket") {
-                                            // Navigasi ke GantiPiketScreen
                                             navController.navigate(
                                                 Screen.GantiPiket.createRoute(
                                                     nama = namaLogin,
