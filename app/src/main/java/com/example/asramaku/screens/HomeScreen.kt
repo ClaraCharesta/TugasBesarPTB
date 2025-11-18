@@ -64,7 +64,7 @@ fun HomeScreen(navController: NavController, userName: String) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp)
-                .verticalScroll(scrollState), // ✅ biar bisa di-scroll
+                .verticalScroll(scrollState), // biar bisa di-scroll
             verticalArrangement = Arrangement.Top
         ) {
             // Header

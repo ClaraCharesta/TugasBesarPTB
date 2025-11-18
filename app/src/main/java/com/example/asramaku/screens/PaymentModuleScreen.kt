@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.asramaku.component.TagihanCard
 import com.example.asramaku.pembayaran.PaymentTabMenu
+import com.example.asramaku.navigation.Screen // <-- import tambahan untuk membuat route Home
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,7 +25,20 @@ fun PaymentModuleScreen(
             TopAppBar(
                 title = { Text("Lihat Tagihan Pembayaran") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(
+                        onClick = {
+                            // Navigasi khusus: kembali ke HomeScreen dengan userName default "User"
+                            // Gunakan Screen.Home.createRoute(...) agar konsisten dengan NavGraph
+                            navController.navigate(Screen.Home.createRoute("User")) {
+                                // Hindari menumpuk banyak instance Home pada back stack
+                                popUpTo(Screen.Home.createRoute("User")) {
+                                    inclusive = false
+                                }
+                                // opsional: singleTop supaya tidak menambah entry bila sudah di home
+                                launchSingleTop = true
+                            }
+                        }
+                    ) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
                     }
                 },
