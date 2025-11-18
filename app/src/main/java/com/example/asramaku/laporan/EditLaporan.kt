@@ -373,7 +373,7 @@ private fun createImageUri(context: Context): Uri? {
         )
         FileProvider.getUriForFile(
             context,
-            "${context.packageName}.fileprovider",
+            "${context.packageName}.provider",
             imageFile
         )
     } catch (e: Exception) {
