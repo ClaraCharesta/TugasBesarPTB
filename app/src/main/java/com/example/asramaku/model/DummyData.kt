@@ -24,26 +24,26 @@ data class BottomNavItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 )
 
-// ✅ SlotData dipakai di jadwal piket
+// SlotData dipakai di jadwal piket
 data class SlotData(
     val nama: String,
     val tanggal: String
 )
 
 object DummyData {
-    // 👤 Dummy user
+    // Dummy user
     val users = mutableListOf(
         User("Clara", "clara@mail.com", "12345"),
         User("Admin", "admin@mail.com", "admin")
     )
 
-    // 💰 Dummy pembayaran
+    // Dummy pembayaran
     val pembayaranList = mutableListOf(
         PembayaranData("Clara", "Oktober", "12A", "Rp 500.000", "Lunas"),
         PembayaranData("Budi", "November", "14B", "Rp 500.000", "Belum Lunas")
     )
 
-    // 🧹 Dummy slot piket
+    // Dummy slot piket
 
     // Daftar slot piket yang bisa diambil
     val slotPiketList = mutableStateListOf(

@@ -25,69 +25,80 @@ fun StatusPembayaranScreen(
     navController: NavController? = null,
     riwayatList: List<Triple<String, String, String>> = emptyList()
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Status Pembayaran",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
+
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+
+        // ===== KONTEN LAMA (UTUH) =====
+        Box(modifier = Modifier.weight(1f)) {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                "Status Pembayaran",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { navController?.popBackStack() }) {
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "Kembali", tint = Color.Black)
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color(0xFFAED6D3)
+                        )
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = { navController?.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Kembali", tint = Color.Black)
+                containerColor = Color(0xFFFFF0D5)
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFC9D6C3))
+                            .border(1.dp, Color.DarkGray),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TableHeaderCell("No", 0.15f)
+                        TableHeaderCell("Bulan Tagihan", 0.45f)
+                        TableHeaderCell("Status Pembayaran", 0.4f)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFAED6D3)
-                )
-            )
-        },
-        containerColor = Color(0xFFFFF0D5)
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            // Header tabel
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFC9D6C3))
-                    .border(1.dp, Color.DarkGray),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TableHeaderCell("No", 0.15f)
-                TableHeaderCell("Bulan Tagihan", 0.45f)
-                TableHeaderCell("Status Pembayaran", 0.4f)
-            }
 
-            val dataPembayaran = if (riwayatList.isNotEmpty()) {
-                riwayatList.mapIndexed { index, triple ->
-                    Triple(index + 1, triple.first, triple.third)
-                }
-            } else {
-                listOf(
-                    Triple(1, "Oktober", "Lunas"),
-                    Triple(2, "November", "Lunas"),
-                    Triple(3, "Desember", "Belum Lunas")
-                )
-            }
+                    val dataPembayaran = if (riwayatList.isNotEmpty()) {
+                        riwayatList.mapIndexed { index, triple ->
+                            Triple(index + 1, triple.first, triple.third)
+                        }
+                    } else {
+                        listOf(
+                            Triple(1, "Oktober", "Lunas"),
+                            Triple(2, "November", "Lunas"),
+                            Triple(3, "Desember", "Belum Lunas")
+                        )
+                    }
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                itemsIndexed(dataPembayaran) { _, (no, bulan, status) ->
-                    StatusPembayaranRow(no, bulan, status)
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        itemsIndexed(dataPembayaran) { _, (no, bulan, status) ->
+                            StatusPembayaranRow(no, bulan, status)
+                        }
+                    }
                 }
             }
         }
+
+        // ===== TAB MENU PEMBAYARAN (BARU) =====
+        PaymentTabMenu(
+            currentRoute = "status_pembayaran",
+            navController = navController!!
+        )
     }
 }
 
@@ -96,7 +107,7 @@ fun RowScope.TableHeaderCell(text: String, weight: Float) {
     Box(
         modifier = Modifier
             .weight(weight)
-            .background(Color(0xFFD9E1D0))
+            .background(Color((0xFFD9E1D0)))
             .border(1.dp, Color.Black)
             .height(IntrinsicSize.Min),
         contentAlignment = Alignment.Center

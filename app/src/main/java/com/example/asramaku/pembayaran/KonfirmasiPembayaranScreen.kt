@@ -26,11 +26,11 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.asramaku.component.RekeningCard
 import com.example.asramaku.R
 import java.io.File
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KonfirmasiPembayaranScreen(
-    // 🔹 Parameter disamakan dengan yang dipanggil dari MainActivity
     bulan: String = "",
     nama: String = "",
     noKamar: String = "",
@@ -38,9 +38,9 @@ fun KonfirmasiPembayaranScreen(
     onBackClick: () -> Unit = {},
     onSubmitClick: (String, String, String, String, Uri?) -> Unit = { _, _, _, _, _ -> },
     onCancelClick: () -> Unit = {},
-    navigateToRiwayat: () -> Unit = {}
+    navigateToRiwayat: () -> Unit = {},
+    navController: NavController? = null  // 🟢 hanya ditambahkan ini
 ) {
-    // 🔹 Nilai default otomatis terisi dari navController
     var inputNama by remember { mutableStateOf(nama) }
     var inputBulan by remember { mutableStateOf(bulan) }
     var inputNoKamar by remember { mutableStateOf(noKamar) }
@@ -66,117 +66,132 @@ fun KonfirmasiPembayaranScreen(
         return FileProvider.getUriForFile(context, "${context.packageName}.provider", imageFile)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFFFF0D5))
-    ) {
-        TopAppBar(
-            title = { Text("Lakukan Pembayaran") },
-            navigationIcon = {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFAED6D3))
-        )
-
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .verticalScroll(scrollState)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            OutlinedTextField(
-                value = inputNama,
-                onValueChange = { inputNama = it },
-                label = { Text("Nama") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = inputBulan,
-                onValueChange = { inputBulan = it },
-                label = { Text("Tagihan Bulan") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = inputNoKamar,
-                onValueChange = { inputNoKamar = it },
-                label = { Text("No. Kamar") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = inputTotalTagihan,
-                onValueChange = { inputTotalTagihan = it },
-                label = { Text("Total Tagihan") },
-                keyboardOptions = KeyboardOptions.Default,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Text("Metode Pembayaran", style = MaterialTheme.typography.titleMedium)
-            RekeningCard(bank = "BCA", nomor = "70055792666", nama = "Asrama", logo = R.drawable.ic_bca)
-            RekeningCard(bank = "BNI", nomor = "18005579266", nama = "Asrama", logo = R.drawable.ic_bni)
-
-            Text("Upload Bukti Pembayaran", style = MaterialTheme.typography.titleMedium)
-            OutlinedButton(
-                onClick = { showDialog = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.PhotoCamera, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Pilih Foto / Kamera")
-            }
-
-            selectedImageUri?.let {
-                Image(
-                    painter = rememberAsyncImagePainter(it),
-                    contentDescription = "Bukti Pembayaran",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(top = 8.dp),
-                    contentScale = ContentScale.Crop
+    // 🟣 -------------- HANYA TAMBAH SCAFFOLD + bottomBar di sini ----------------
+    Scaffold(
+        bottomBar = {
+            navController?.let {
+                PaymentTabMenu(
+                    currentRoute = "konfirmasi_pembayaran",
+                    navController = it
                 )
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(
-                    onClick = {
-                        if (inputNama.isNotBlank() && inputBulan.isNotBlank() &&
-                            inputNoKamar.isNotBlank() && inputTotalTagihan.isNotBlank() &&
-                            selectedImageUri != null
-                        ) {
-                            onSubmitClick(
-                                inputNama,
-                                inputBulan,
-                                inputNoKamar,
-                                inputTotalTagihan,
-                                selectedImageUri
-                            )
-                            navigateToRiwayat()
-                        } else {
-                            println("⚠️ Harap isi semua data terlebih dahulu!")
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E6664))
-                ) { Text("Kirim") }
-
-                Button(
-                    onClick = onCancelClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E6664))
-                ) { Text("Batal") }
-            }
-
-            Spacer(modifier = Modifier.height(60.dp))
         }
+    ) { innerPadding ->
+        // -------------------- KODE ASLI TIDAK DIUBAH 1 BARIS PUN --------------------
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .background(Color(0xFFFFF0D5))
+        ) {
+            TopAppBar(
+                title = { Text("Lakukan Pembayaran") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFAED6D3))
+            )
+
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .verticalScroll(scrollState)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = inputNama,
+                    onValueChange = { inputNama = it },
+                    label = { Text("Nama") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = inputBulan,
+                    onValueChange = { inputBulan = it },
+                    label = { Text("Tagihan Bulan") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = inputNoKamar,
+                    onValueChange = { inputNoKamar = it },
+                    label = { Text("No. Kamar") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = inputTotalTagihan,
+                    onValueChange = { inputTotalTagihan = it },
+                    label = { Text("Total Tagihan") },
+                    keyboardOptions = KeyboardOptions.Default,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text("Metode Pembayaran", style = MaterialTheme.typography.titleMedium)
+                RekeningCard(bank = "BCA", nomor = "70055792666", nama = "Asrama", logo = R.drawable.ic_bca)
+                RekeningCard(bank = "BNI", nomor = "18005579266", nama = "Asrama", logo = R.drawable.ic_bni)
+
+                Text("Upload Bukti Pembayaran", style = MaterialTheme.typography.titleMedium)
+                OutlinedButton(
+                    onClick = { showDialog = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.PhotoCamera, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Pilih Foto / Kamera")
+                }
+
+                selectedImageUri?.let {
+                    Image(
+                        painter = rememberAsyncImagePainter(it),
+                        contentDescription = "Bukti Pembayaran",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .padding(top = 8.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = {
+                            if (inputNama.isNotBlank() && inputBulan.isNotBlank() &&
+                                inputNoKamar.isNotBlank() && inputTotalTagihan.isNotBlank() &&
+                                selectedImageUri != null
+                            ) {
+                                onSubmitClick(
+                                    inputNama,
+                                    inputBulan,
+                                    inputNoKamar,
+                                    inputTotalTagihan,
+                                    selectedImageUri
+                                )
+                                navigateToRiwayat()
+                            } else {
+                                println("⚠️ Harap isi semua data terlebih dahulu!")
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E6664))
+                    ) { Text("Kirim") }
+
+                    Button(
+                        onClick = onCancelClick,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E6664))
+                    ) { Text("Batal") }
+                }
+
+                Spacer(modifier = Modifier.height(60.dp))
+            }
+        }
+        // -------------------------------------------------------------------------
     }
 
     if (showDialog) {
