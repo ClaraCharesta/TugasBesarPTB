@@ -43,11 +43,7 @@ fun StatusPembayaranScreen(
                                 color = Color.Black
                             )
                         },
-                        navigationIcon = {
-                            IconButton(onClick = { navController?.popBackStack() }) {
-                                Icon(Icons.Filled.ArrowBack, contentDescription = "Kembali", tint = Color.Black)
-                            }
-                        },
+                        navigationIcon = {},
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = Color(0xFFAED6D3)
                         )

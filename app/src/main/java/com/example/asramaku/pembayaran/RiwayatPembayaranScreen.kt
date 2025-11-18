@@ -56,14 +56,7 @@ fun RiwayatPembayaranScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Riwayat Pembayaran") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Kembali"
-                        )
-                    }
-                },
+                navigationIcon = {},
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFFA8C9C4),
                     titleContentColor = Color.Black
