@@ -4,9 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,20 +15,42 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.asramaku.navigation.Screen
 import com.example.asramaku.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReportScreen(navController: NavController) {
+fun ReportScreen(
+    navController: NavController,
+    userName: String = "User"
+) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        "Layar Utama",
-                        color = Color.Gray,
-                        fontSize = 16.sp
+                        text = "Laporan Kehilangan",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
                     )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            // Navigasi eksplisit ke HomeScreen
+                            navController.navigate(Screen.Home.createRoute(userName)) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.Gray
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = LightYellow,
@@ -46,7 +66,7 @@ fun ReportScreen(navController: NavController) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Hallo, Reva!",
+                text = "Hallo, $userName!",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = DarkTeal
