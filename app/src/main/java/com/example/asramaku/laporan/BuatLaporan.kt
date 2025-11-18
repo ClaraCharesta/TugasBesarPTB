@@ -48,22 +48,26 @@ fun BuatLaporan(navController: NavController) {
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
     val context = LocalContext.current
+
+    // Launcher galeri
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let {
-            imageUri = it
-        }
+        uri?.let { imageUri = it }
     }
 
+    // Launcher kamera
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
             imageUri = tempCameraUri
+        } else {
+            Toast.makeText(context, "Gagal mengambil foto", Toast.LENGTH_SHORT).show()
         }
     }
 
+    // Permission kamera
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -84,9 +88,7 @@ fun BuatLaporan(navController: NavController) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kembali")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = LightYellow
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LightYellow)
             )
         },
         containerColor = LightYellow
@@ -99,12 +101,7 @@ fun BuatLaporan(navController: NavController) {
                 .verticalScroll(rememberScrollState())
         ) {
             // Judul Kerusakan
-            Text(
-                text = "Judul Kerusakan",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            Text("Judul Kerusakan", fontSize = 14.sp, color = Color.Gray)
             OutlinedTextField(
                 value = judulKerusakan,
                 onValueChange = { judulKerusakan = it },
@@ -119,15 +116,10 @@ fun BuatLaporan(navController: NavController) {
                 shape = RoundedCornerShape(8.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Deskripsi Kerusakan
-            Text(
-                text = "Deskripsi Kerusakan",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            Text("Deskripsi Kerusakan", fontSize = 14.sp, color = Color.Gray)
             OutlinedTextField(
                 value = deskripsiKerusakan,
                 onValueChange = { deskripsiKerusakan = it },
@@ -144,15 +136,10 @@ fun BuatLaporan(navController: NavController) {
                 shape = RoundedCornerShape(8.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Lokasi/Kamar
-            Text(
-                text = "Lokasi/Kamar",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            Text("Lokasi/Kamar", fontSize = 14.sp, color = Color.Gray)
             OutlinedTextField(
                 value = lokasiKamar,
                 onValueChange = { lokasiKamar = it },
@@ -167,43 +154,25 @@ fun BuatLaporan(navController: NavController) {
                 shape = RoundedCornerShape(8.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Upload Foto
-            Text(
-                text = "Upload Foto",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
+            Text("Upload Foto", fontSize = 14.sp, color = Color.Gray)
             Button(
                 onClick = { showImagePickerDialog = true },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Icon(
-                    Icons.Default.PhotoLibrary,
-                    contentDescription = "Pilih Foto",
-                    tint = DarkTeal
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Default.PhotoLibrary, contentDescription = "Pilih Foto", tint = DarkTeal)
+                Spacer(Modifier.width(8.dp))
                 Text("Tambahkan Foto", color = DarkTeal)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
             // Preview Foto
-            Text(
-                text = "Foto Barang Rusak",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
+            Text("Foto Barang Rusak", fontSize = 14.sp, color = Color.Gray)
             if (imageUri != null) {
                 Card(
                     modifier = Modifier
@@ -224,9 +193,7 @@ fun BuatLaporan(navController: NavController) {
                         .fillMaxWidth()
                         .height(200.dp),
                     shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -242,7 +209,7 @@ fun BuatLaporan(navController: NavController) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
 
             // Buttons
             Row(
@@ -252,9 +219,7 @@ fun BuatLaporan(navController: NavController) {
                 Button(
                     onClick = { showDialog = true },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DarkTeal
-                    ),
+                    colors = ButtonDefaults.buttonColors(containerColor = DarkTeal),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text("Kirim Laporan", fontWeight = FontWeight.Bold)
@@ -263,11 +228,7 @@ fun BuatLaporan(navController: NavController) {
                 Button(
                     onClick = { navController.navigateUp() },
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.run {
-                        buttonColors(
-                                        containerColor = RedButton
-                                    )
-                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = RedButton),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text("Batal", fontWeight = FontWeight.Bold)
@@ -276,69 +237,62 @@ fun BuatLaporan(navController: NavController) {
         }
     }
 
-    //image picker dialog
-    if (showImagePickerDialog){
+    // Image picker dialog
+    if (showImagePickerDialog) {
         AlertDialog(
             onDismissRequest = { showImagePickerDialog = false },
-            title = { Text("Pilih Foto")},
-            text = { Text("Pilih sumber foto")},
+            title = { Text("Pilih Foto") },
+            text = { Text("Pilih sumber foto") },
             confirmButton = {
                 TextButton(onClick = {
                     showImagePickerDialog = false
                     galleryLauncher.launch("image/*")
-                }
-                ) {
+                }) {
                     Text("Galeri", color = DarkTeal)
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        showImagePickerDialog = false
-                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
-                ) {
-                    Text ("Kamera", color = DarkTeal)
+                TextButton(onClick = {
+                    showImagePickerDialog = false
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                }) {
+                    Text("Kamera", color = DarkTeal)
                 }
             },
             containerColor = Color.White
         )
     }
 
-    // Confirmation Dialog
+    // Confirmation dialog
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = { Text("Apakah kamu yakin?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        // Simpan laporan
-                        val newLaporan = Laporan(
-                            id = (DummyData.daftarLaporan.size + 1).toString(),
-                            judulKerusakan = judulKerusakan,
-                            deskripsiKerusakan = deskripsiKerusakan,
-                            lokasiKamar = lokasiKamar,
-                            fotoUrl = imageUri?.toString(),
-                            tanggal = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID")).format(Date()),
-                            status = "Menunggu"
-                        )
-                        DummyData.daftarLaporan.add(0, newLaporan)
+                TextButton(onClick = {
+                    val newLaporan = Laporan(
+                        id = (DummyData.daftarLaporan.size + 1).toString(),
+                        judulKerusakan = judulKerusakan,
+                        deskripsiKerusakan = deskripsiKerusakan,
+                        lokasiKamar = lokasiKamar,
+                        fotoUrl = imageUri?.toString(),
+                        tanggal = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID")).format(Date()),
+                        status = "Menunggu"
+                    )
+                    DummyData.daftarLaporan.add(0, newLaporan)
 
-                        // Tambah notifikasi
-                        val newNotifikasi = Notifikasi(
-                            id = (DummyData.daftarNotifikasi.size + 1).toString(),
-                            judul = "Laporan berhasil dikirim",
-                            pesan = "Laporan '$judulKerusakan' telah dikirim",
-                            waktu = "Baru saja",
-                            tipe = "kirim"
-                        )
-                        DummyData.daftarNotifikasi.add(0, newNotifikasi)
+                    val newNotifikasi = Notifikasi(
+                        id = (DummyData.daftarNotifikasi.size + 1).toString(),
+                        judul = "Laporan berhasil dikirim",
+                        pesan = "Laporan '$judulKerusakan' telah dikirim",
+                        waktu = "Baru saja",
+                        tipe = "kirim"
+                    )
+                    DummyData.daftarNotifikasi.add(0, newNotifikasi)
 
-                        showDialog = false
-                        navController.navigateUp()
-                    }
-                ) {
+                    showDialog = false
+                    navController.navigateUp()
+                }) {
                     Text("Ya", color = DarkTeal)
                 }
             },
@@ -352,22 +306,19 @@ fun BuatLaporan(navController: NavController) {
     }
 }
 
-// Helper function untuk membuat URI untuk kamera
+// Helper function untuk membuat URI foto (sudah sesuai manifest)
 private fun createImageUri(context: Context): Uri? {
-    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-    val imageFileName = "JPEG_${timeStamp}_"
-    val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-
     return try {
-        val imageFile = File.createTempFile(
-            imageFileName,
-            ".jpg",
-            storageDir
-        )
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val fileName = "IMG_$timeStamp.jpg"
+        val dir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        if (!dir!!.exists()) dir.mkdirs()
+        val file = File(dir, fileName)
+
         FileProvider.getUriForFile(
             context,
-            "${context.packageName}.fileprovider",
-            imageFile
+            "${context.packageName}.provider", // WAJIB SAMA DENGAN MANIFEST
+            file
         )
     } catch (e: Exception) {
         e.printStackTrace()
