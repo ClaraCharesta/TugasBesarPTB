@@ -20,7 +20,7 @@ import com.example.asramaku.piket.jadwalpiket.GantiPiketScreen
 import com.example.asramaku.piket.slot.AmbilSlotScreen
 import java.time.LocalDate
 
-// 🔹 Tambahan import modul laporan
+// Tambahan import modul laporan
 import com.example.asramaku.laporan.*
 import com.example.asramaku.model.*
 import com.example.asramaku.ui.theme.*
@@ -45,7 +45,7 @@ sealed class Screen(val route: String) {
             "belum_dikerjakan_screen/$nama/$tanggal"
     }
 
-    // ✅ Diperbaiki: route DetailPiketSaya biar fleksibel (fotoUri opsional)
+    // Diperbaiki: route DetailPiketSaya biar fleksibel (fotoUri opsional)
     object DetailPiketSaya : Screen("detail_piket_screen/{nama}/{tanggal}?fotoUri={fotoUri}") {
         fun createRoute(nama: String, tanggal: String, fotoUri: String? = null): String {
             return if (!fotoUri.isNullOrEmpty()) {
@@ -72,6 +72,8 @@ fun NavGraph(navController: NavHostController) {
 
     val riwayatPembayaranList = remember { mutableStateListOf<PembayaranData>() }
     val daftarTagihan = remember { mutableStateListOf("Oktober", "November", "Desember") }
+    val statusLunasList = remember { mutableStateListOf<String>() }
+
 
     NavHost(
         navController = navController,
@@ -140,7 +142,7 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        // ✅ Bagian ini diperbaiki biar route & argumen sinkron
+        // Bagian ini diperbaiki biar route & argumen sinkron
         composable(
             route = "detail_piket_screen/{nama}/{tanggal}?fotoUri={fotoUri}",
             arguments = listOf(
@@ -186,7 +188,7 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        // ✅ Halaman Ambil Slot
+        // Halaman Ambil Slot
         composable(route = Screen.AmbilSlot.route) {
             AmbilSlotScreen(
                 onBackClick = { navController.popBackStack() }
@@ -202,7 +204,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
         // =====================================================
-        // 🔹 FITUR PEMBAYARAN
+        // FITUR PEMBAYARAN
         // =====================================================
 
         composable("daftar_tagihan") {
@@ -211,6 +213,7 @@ fun NavGraph(navController: NavHostController) {
 
         composable("konfirmasi_pembayaran") {
             KonfirmasiPembayaranScreen(
+                navController = navController,
                 onBackClick = { navController.popBackStack() },
                 onSubmitClick = { _, _, _, _, _ -> },
                 onCancelClick = { navController.popBackStack() }
@@ -233,6 +236,7 @@ fun NavGraph(navController: NavHostController) {
             val totalTagihan = backStackEntry.arguments?.getString("totalTagihan") ?: ""
 
             KonfirmasiPembayaranScreen(
+                navController = navController,
                 bulan = bulan,
                 nama = nama,
                 noKamar = noKamar,
@@ -267,6 +271,10 @@ fun NavGraph(navController: NavHostController) {
                                 )
                             )
                             daftarTagihan.remove(bulanInput)
+                            // TANDAI BULAN INI PERMANEN LUNAS
+                            if (!statusLunasList.contains(bulanInput)) {
+                                statusLunasList.add(bulanInput)
+                            }
                         }
 
                         navController.navigate("riwayat_pembayaran")
@@ -278,13 +286,13 @@ fun NavGraph(navController: NavHostController) {
 
         composable("status_pembayaran") {
             val dataStatus = listOf("Oktober", "November", "Desember").map { bulanItem ->
-                val sudahLunas = riwayatPembayaranList.any { it.bulan == bulanItem }
                 Triple(
                     bulanItem,
                     "500000",
-                    if (sudahLunas) "Lunas" else "Belum Lunas"
+                    if (statusLunasList.contains(bulanItem)) "Lunas" else "Belum Lunas"
                 )
             }
+
             StatusPembayaranScreen(
                 navController = navController,
                 riwayatList = dataStatus
@@ -293,10 +301,14 @@ fun NavGraph(navController: NavHostController) {
 
         composable("riwayat_pembayaran") {
             RiwayatPembayaranScreen(
+                navController = navController,
                 onBackClick = { navController.popBackStack() },
                 riwayatList = riwayatPembayaranList,
                 onDetailClick = { index ->
                     navController.navigate("detail_pembayaran/$index")
+                },
+                onDeleteItem = { index ->
+                    riwayatPembayaranList.removeAt(index)
                 }
             )
         }
@@ -318,7 +330,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
         // =====================================================
-        // 🔹 FITUR LAPORAN KERUSAKAN
+        // FITUR LAPORAN KERUSAKAN
         // =====================================================
 
         composable("dashboard") {

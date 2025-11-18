@@ -10,20 +10,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 
 @Composable
 fun RiwayatCard(
     bulanTagihan: String,
     jumlahTagihan: String,
     status: String,
-    onDetailClick: () -> Unit = {}
+    onDetailClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {}
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFDCE8DC)),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFDCE8DC)   // warna sesuai gambar
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -43,13 +48,34 @@ fun RiwayatCard(
                 fontSize = 16.sp,
                 color = if (status == "Lunas") Color(0xFF2E7D32) else Color(0xFFD32F2F)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = onDetailClick,
-                modifier = Modifier.align(Alignment.Start),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E6664))
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Lihat detail")
+                Button(
+                    onClick = onDetailClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E6664))
+                ) {
+                    Text("Lihat detail")
+                }
+
+                // ⭐ Tombol hapus
+                IconButton(
+                    onClick = onDeleteClick,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color(0xFFF2F2F2)
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Hapus",
+                        tint = Color(0xFFCC0000)
+                    )
+                }
             }
         }
     }
