@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Wajib untuk Retrofit -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Permission -->
     <uses-permission android:name="android.permission.CAMERA"
         tools:ignore="PermissionImpliesUnsupportedChromeOsHardware" />
@@ -18,7 +21,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AsramaKu">
+        android:theme="@style/Theme.AsramaKu"
+        android:usesCleartextTraffic="true">
 
         <!-- Main Activity -->
         <activity

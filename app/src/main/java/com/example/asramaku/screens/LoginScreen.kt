@@ -23,9 +23,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.asramaku.R
-import com.example.asramaku.model.DummyData
 import com.example.asramaku.navigation.Screen
+import com.example.asramaku.data.remote.RetrofitClient
+import com.example.asramaku.data.model.LoginRequest
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -35,6 +37,7 @@ fun LoginScreen(navController: NavController) {
     val lightButtonColor = Color(0xFF91C9C0)
     val textColor = Color(0xFF324E52)
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -151,18 +154,36 @@ fun LoginScreen(navController: NavController) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Button(
                         onClick = {
-                            // 🔧 Cari user berdasarkan email & password
-                            val matchedUser = DummyData.users.find {
-                                it.email == email && it.password == password
-                            }
+                            scope.launch {
 
-                            if (matchedUser != null) {
-                                //  Kirim nama user ke halaman Home
-                                navController.navigate(Screen.Home.route + "?userName=${matchedUser.name}") {
-                                    popUpTo(Screen.Login.route) { inclusive = true }
+                                // 🔥 Panggil API login
+                                val response = try {
+                                    RetrofitClient.instance.login(
+                                        LoginRequest(email, password)
+                                    )
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Tidak dapat terhubung ke server", Toast.LENGTH_SHORT).show()
+                                    return@launch
                                 }
-                            } else {
-                                Toast.makeText(context, "Email or Password incorrect", Toast.LENGTH_SHORT).show()
+
+                                if (response.isSuccessful) {
+
+                                    val body = response.body()
+
+                                    if (body != null) {
+                                        Toast.makeText(context, "Login sukses", Toast.LENGTH_SHORT).show()
+
+                                        // 🔥 Navigasi ke Home
+                                        navController.navigate(
+                                            Screen.Home.route + "?userName=${body.user.name}"
+                                        ) {
+                                            popUpTo(Screen.Login.route) { inclusive = true }
+                                        }
+                                    }
+
+                                } else {
+                                    Toast.makeText(context, "Email atau password salah", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = darkButtonColor),
