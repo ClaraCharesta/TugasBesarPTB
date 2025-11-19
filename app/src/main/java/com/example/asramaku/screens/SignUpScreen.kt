@@ -33,11 +33,14 @@ import androidx.navigation.NavController
 import com.example.asramaku.R
 import com.example.asramaku.model.UserPreferences
 import com.example.asramaku.navigation.Screen
+import com.example.asramaku.data.remote.RetrofitClient
+import com.example.asramaku.data.model.RegisterRequest
+import kotlinx.coroutines.launch
 
 @Composable
 fun SignUpScreen(navController: NavController) {
     val context = LocalContext.current
-    val userPrefs = remember { UserPreferences(context) }
+    val scope = rememberCoroutineScope()
 
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -158,9 +161,31 @@ fun SignUpScreen(navController: NavController) {
                 Button(
                     onClick = {
                         if (name.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
-                            userPrefs.saveUser(name, email, password)
-                            Toast.makeText(context, "Account created successfully!", Toast.LENGTH_SHORT).show()
-                            navController.navigate(Screen.Login.route)
+                            scope.launch {
+                                val response = try {
+                                    RetrofitClient.instance.register(
+                                        RegisterRequest(
+                                            name = name,
+                                            email = email,
+                                            password = password
+                                        )
+                                    )
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Tidak dapat terhubung ke server", Toast.LENGTH_SHORT).show()
+                                    return@launch
+                                }
+
+                                if (response.isSuccessful) {
+                                    Toast.makeText(context, "Akun berhasil dibuat!", Toast.LENGTH_SHORT).show()
+
+                                    navController.navigate(Screen.Login.route) {
+                                        popUpTo(Screen.SignUp.route) { inclusive = true }
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Gagal membuat akun", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
                         } else {
                             Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                         }

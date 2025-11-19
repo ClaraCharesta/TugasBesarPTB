@@ -2,6 +2,7 @@ package com.example.asramaku.data.remote
 
 import com.example.asramaku.data.model.LoginRequest
 import com.example.asramaku.data.model.LoginResponse
+import com.example.asramaku.data.model.RegisterRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -15,6 +16,6 @@ interface ApiService {
 
     @POST("api/auth/register")
     suspend fun register(
-        @Body request: LoginRequest
+        @Body request: RegisterRequest
     ): Response<LoginResponse>
 }
