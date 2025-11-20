@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -20,22 +21,25 @@ import androidx.navigation.NavController
 import com.example.asramaku.R
 import com.example.asramaku.navigation.Screen
 import kotlinx.coroutines.delay
+import com.example.asramaku.data.preferences.UserPreferences
 
 @Composable
-fun HomeScreen(navController: NavController, userName: String) {
+fun HomeScreen(navController: NavController, userName: String?) {
     val backgroundColor = Color(0xFFFFE7C2)
     val moduleButtonColor = Color(0xFFB6DFD7)
     val moduleButtonColor2 = Color(0xFFD9ECE7)
     val textColor = Color(0xFF324E52)
 
-    val dummyUsers = listOf(
-        User(id = 1, name = "Clara", role = "Mahasiswa"),
-        User(id = 2, name = "Andi", role = "Petugas Asrama"),
-        User(id = 3, name = "Rina", role = "Admin")
-    )
-
-    val loggedInUserId = remember { mutableStateOf(1) }
-    val currentUser = dummyUsers.find { it.id == loggedInUserId.value }
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferences(context) }
+    val storedName = remember { userPrefs.getName() } // bisa null
+    val displayName = remember(userName, storedName) {
+            when {
+                !userName.isNullOrBlank() -> userName!!
+                !storedName.isNullOrBlank() -> storedName!!
+                else -> "User"
+            }
+    }
 
     // animasi muncul konten satu per satu
     var showHeader by remember { mutableStateOf(false) }
@@ -79,7 +83,7 @@ fun HomeScreen(navController: NavController, userName: String) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Hello, ${currentUser?.name ?: "User"}!",
+                        text = "Hello, $displayName!",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = textColor
