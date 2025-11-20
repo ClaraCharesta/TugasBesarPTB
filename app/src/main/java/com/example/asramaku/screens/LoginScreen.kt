@@ -161,7 +161,7 @@ fun LoginScreen(navController: NavController) {
                                     RetrofitClient.instance.login(
                                         LoginRequest(email, password)
                                     )
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     Toast.makeText(context, "Tidak dapat terhubung ke server", Toast.LENGTH_SHORT).show()
                                     return@launch
                                 }

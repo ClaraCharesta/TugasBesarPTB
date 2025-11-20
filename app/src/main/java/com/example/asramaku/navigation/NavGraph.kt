@@ -1,5 +1,6 @@
 package com.example.asramaku.navigation
 
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -31,8 +32,8 @@ sealed class Screen(val route: String) {
     object SignUp : Screen("signup_screen")
     object Welcome : Screen("welcome_screen")
 
-    object Home : Screen("home_screen/{userName}") {
-        fun createRoute(userName: String) = "home_screen/$userName"
+    object Home : Screen("home?userName={userName}") {
+        fun createRoute(userName: String) = "hhome?userName=${Uri.encode(userName)}"
     }
 
     object Duty : Screen("duty_screen")
@@ -101,13 +102,13 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = Screen.Home.route,
+            route = Screen.Home.route + "?userName={userName}",
             arguments = listOf(
-                navArgument("userName") { type = NavType.StringType; defaultValue = "User" }
+                navArgument("userName") { defaultValue = "" }
             )
         ) { backStackEntry ->
-            val userName = backStackEntry.arguments?.getString("userName") ?: "User"
-            HomeScreen(navController = navController, userName = userName)
+            val userNameArg = backStackEntry.arguments?.getString("userName") ?: ""
+            HomeScreen(navController, userNameArg)
         }
 
         composable(route = Screen.Duty.route) {
