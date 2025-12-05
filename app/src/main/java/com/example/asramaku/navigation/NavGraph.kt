@@ -10,6 +10,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
 import com.example.asramaku.model.PembayaranData
 import com.example.asramaku.screens.*
 import com.example.asramaku.pembayaran.*
@@ -23,47 +25,56 @@ import java.time.LocalDate
 
 // Tambahan import modul laporan
 import com.example.asramaku.laporan.*
-import com.example.asramaku.model.*
-import com.example.asramaku.ui.theme.*
 
+/**
+ * Nav routes: keep base names here and provide createRoute helpers.
+ * This file registers matching composable(...) routes exactly as declared below.
+ */
 sealed class Screen(val route: String) {
     object Splash : Screen("splash_screen")
     object Login : Screen("login_screen")
     object SignUp : Screen("signup_screen")
     object Welcome : Screen("welcome_screen")
 
-    object Home : Screen("home?userName={userName}") {
-        fun createRoute(userName: String) = "hhome?userName=${Uri.encode(userName)}"
+    // Home: base "home" + optional query ?userName=
+    object Home : Screen("home") {
+        fun createRoute(userName: String? = null): String =
+            if (userName.isNullOrBlank()) "home" else "home?userName=${Uri.encode(userName)}"
+        // composable routes registered: "home" and "home?userName={userName}"
     }
 
-    object Duty : Screen("duty_screen")
+    // Duty expects two path params
+    object Duty : Screen("duty_module_screen") {
+        fun createRoute(userId: Int, nama: String) =
+            "duty_module_screen/$userId/${Uri.encode(nama)}"
+    }
+
     object Report : Screen("report_screen")
     object Payment : Screen("payment_screen")
-    object JadwalPiket : Screen("jadwal_piket_screen")
 
-    object BelumDikerjakan : Screen("belum_dikerjakan_screen/{nama}/{tanggal}") {
-        fun createRoute(nama: String, tanggal: String) =
-            "belum_dikerjakan_screen/$nama/$tanggal"
+    object JadwalPiket : Screen("jadwal_piket_screen/{userId}/{nama}") {
+        fun createRoute(userId: Int, nama: String) = "jadwal_piket_screen/$userId/${Uri.encode(nama)}"
     }
 
-    // Diperbaiki: route DetailPiketSaya biar fleksibel (fotoUri opsional)
+    object BelumDikerjakan : Screen("belum_dikerjakan_screen/{nama}/{tanggal}") {
+        fun createRoute(nama: String, tanggal: String) = "belum_dikerjakan_screen/${Uri.encode(nama)}/$tanggal"
+    }
+
     object DetailPiketSaya : Screen("detail_piket_screen/{nama}/{tanggal}?fotoUri={fotoUri}") {
         fun createRoute(nama: String, tanggal: String, fotoUri: String? = null): String {
             return if (!fotoUri.isNullOrEmpty()) {
-                "detail_piket_screen/$nama/$tanggal?fotoUri=$fotoUri"
+                "detail_piket_screen/${Uri.encode(nama)}/$tanggal?fotoUri=${Uri.encode(fotoUri)}"
             } else {
-                "detail_piket_screen/$nama/$tanggal"
+                "detail_piket_screen/${Uri.encode(nama)}/$tanggal"
             }
         }
     }
 
     object GantiPiket : Screen("ganti_piket_screen/{nama}/{tanggal}") {
-        fun createRoute(nama: String, tanggal: String) =
-            "ganti_piket_screen/$nama/$tanggal"
+        fun createRoute(nama: String, tanggal: String) = "ganti_piket_screen/${Uri.encode(nama)}/$tanggal"
     }
 
     object RekapPiket : Screen("rekap_piket_screen")
-
     object AmbilSlot : Screen("ambil_slot_screen")
 }
 
@@ -75,54 +86,104 @@ fun NavGraph(navController: NavHostController) {
     val daftarTagihan = remember { mutableStateListOf("Oktober", "November", "Desember") }
     val statusLunasList = remember { mutableStateListOf<String>() }
 
-
     NavHost(
         navController = navController,
         startDestination = Screen.Splash.route
     ) {
-
-        // =====================================================
-        // BAGIAN ASLI
-        // =====================================================
-
-        composable(route = Screen.Splash.route) {
+        // ========================
+        // AUTH
+        // ========================
+        composable(Screen.Splash.route) {
             SplashScreen(navController = navController)
         }
 
-        composable(route = Screen.Login.route) {
+        composable(Screen.Login.route) {
             LoginScreen(navController = navController)
         }
 
-        composable(route = Screen.SignUp.route) {
+        composable(Screen.SignUp.route) {
             SignUpScreen(navController = navController)
         }
 
-        composable(route = Screen.Welcome.route) {
+        composable(Screen.Welcome.route) {
             WelcomeScreen(navController = navController)
         }
 
+        // ========================
+        // HOME - two registrations:
+        // 1) plain "home" (no args)
+        // 2) "home?userName={userName}" (optional query param)
+        // This preserves existing HomeScreen signature (navController, userName: String?)
+        // so you DON'T need to modify HomeScreen file.
+        // ========================
+        // ========================
+// HOME
+// ========================
         composable(
-            route = Screen.Home.route + "?userName={userName}",
+            route = "home_screen/{userId}/{userName}",
             arguments = listOf(
-                navArgument("userName") { defaultValue = "" }
+                navArgument("userId") { type = NavType.IntType },
+                navArgument("userName") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val userNameArg = backStackEntry.arguments?.getString("userName") ?: ""
-            HomeScreen(navController, userNameArg)
+
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+            val userName = backStackEntry.arguments?.getString("userName") ?: ""
+
+            HomeScreen(
+                navController = navController,
+                userId = userId,
+                userName = userName
+            )
         }
 
-        composable(route = Screen.Duty.route) {
-            DutyModuleScreen(navController = navController)
+
+
+        // ========================
+        // DUTY - use exact route from sealed class
+        // ========================
+        composable(
+            route = "duty_module_screen/{userId}/{nama}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.IntType },
+                navArgument("nama") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+            val namaLogin = backStackEntry.arguments?.getString("nama") ?: ""
+
+            DutyModuleScreen(navController, userId, namaLogin)
         }
 
-        composable(route = Screen.JadwalPiket.route) {
-            JadwalPiketScreen(navController = navController)
+
+
+
+
+        // ========================
+        // JADWAL PIKET
+        // ========================
+        composable(
+            route = Screen.JadwalPiket.route,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.IntType },
+                navArgument("nama") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+            val namaLogin = backStackEntry.arguments?.getString("nama") ?: ""
+            JadwalPiketScreen(navController, userId, namaLogin)
         }
 
+        // ========================
+        // REKAP PIKET
+        // ========================
         composable(route = Screen.RekapPiket.route) {
             RekapPiketSayaScreen(navController = navController)
         }
 
+        // ========================
+        // BELUM DIKERJAKAN
+        // ========================
         composable(
             route = Screen.BelumDikerjakan.route,
             arguments = listOf(
@@ -143,9 +204,11 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        // Bagian ini diperbaiki biar route & argumen sinkron
+        // ========================
+        // DETAIL PIKET SAYA (optional fotoUri)
+        // ========================
         composable(
-            route = "detail_piket_screen/{nama}/{tanggal}?fotoUri={fotoUri}",
+            route = Screen.DetailPiketSaya.route,
             arguments = listOf(
                 navArgument("nama") { type = NavType.StringType },
                 navArgument("tanggal") { type = NavType.StringType },
@@ -157,8 +220,7 @@ fun NavGraph(navController: NavHostController) {
             )
         ) { backStackEntry ->
             val nama = backStackEntry.arguments?.getString("nama") ?: "User"
-            val tanggalStr =
-                backStackEntry.arguments?.getString("tanggal") ?: LocalDate.now().toString()
+            val tanggalStr = backStackEntry.arguments?.getString("tanggal") ?: LocalDate.now().toString()
             val tanggal = LocalDate.parse(tanggalStr)
             val fotoUri = backStackEntry.arguments?.getString("fotoUri")
 
@@ -170,6 +232,9 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
+        // ========================
+        // GANTI PIKET
+        // ========================
         composable(
             route = Screen.GantiPiket.route,
             arguments = listOf(
@@ -189,11 +254,11 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        // Halaman Ambil Slot
+        // ========================
+        // Ambil Slot, Report, Payment (no args)
+        // ========================
         composable(route = Screen.AmbilSlot.route) {
-            AmbilSlotScreen(
-                onBackClick = { navController.popBackStack() }
-            )
+            AmbilSlotScreen(onBackClick = { navController.popBackStack() })
         }
 
         composable(route = Screen.Report.route) {
@@ -204,10 +269,9 @@ fun NavGraph(navController: NavHostController) {
             PaymentScreen(navController = navController)
         }
 
-        // =====================================================
-        // FITUR PEMBAYARAN
-        // =====================================================
-
+        // ========================
+        // PEMBAYARAN - daftar_tagihan, konfirmasi, status, riwayat...
+        // ========================
         composable("daftar_tagihan") {
             PaymentModuleScreen(navController, daftarTagihan)
         }
@@ -272,7 +336,6 @@ fun NavGraph(navController: NavHostController) {
                                 )
                             )
                             daftarTagihan.remove(bulanInput)
-                            // TANDAI BULAN INI PERMANEN LUNAS
                             if (!statusLunasList.contains(bulanInput)) {
                                 statusLunasList.add(bulanInput)
                             }
@@ -330,10 +393,9 @@ fun NavGraph(navController: NavHostController) {
             }
         }
 
-        // =====================================================
-        // FITUR LAPORAN KERUSAKAN
-        // =====================================================
-
+        // ========================
+        // LAPORAN KERUSAKAN
+        // ========================
         composable("dashboard") {
             ReportScreen(navController = navController)
         }
@@ -348,9 +410,7 @@ fun NavGraph(navController: NavHostController) {
 
         composable(
             route = "detail_laporan/{laporanId}",
-            arguments = listOf(
-                navArgument("laporanId") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("laporanId") { type = NavType.StringType })
         ) { backStackEntry ->
             val laporanId = backStackEntry.arguments?.getString("laporanId") ?: ""
             DetailLaporan(navController = navController, laporanId = laporanId)
@@ -358,9 +418,7 @@ fun NavGraph(navController: NavHostController) {
 
         composable(
             route = "edit_laporan/{laporanId}",
-            arguments = listOf(
-                navArgument("laporanId") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("laporanId") { type = NavType.StringType })
         ) { backStackEntry ->
             val laporanId = backStackEntry.arguments?.getString("laporanId") ?: ""
             EditLaporan(navController = navController, laporanId = laporanId)

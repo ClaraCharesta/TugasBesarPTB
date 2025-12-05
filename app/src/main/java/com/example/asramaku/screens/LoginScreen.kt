@@ -1,5 +1,6 @@
 package com.example.asramaku.screens
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
@@ -156,28 +157,25 @@ fun LoginScreen(navController: NavController) {
                         onClick = {
                             scope.launch {
 
-                                // 🔥 Panggil API login
                                 val response = try {
-                                    RetrofitClient.instance.login(
-                                        LoginRequest(email, password)
-                                    )
+                                    RetrofitClient.instance.login(LoginRequest(email, password))
                                 } catch (_: Exception) {
                                     Toast.makeText(context, "Tidak dapat terhubung ke server", Toast.LENGTH_SHORT).show()
                                     return@launch
                                 }
 
                                 if (response.isSuccessful) {
-
                                     val body = response.body()
 
                                     if (body != null) {
                                         Toast.makeText(context, "Login sukses", Toast.LENGTH_SHORT).show()
 
-                                        // 🔥 Navigasi ke Home
-                                        navController.navigate(
-                                            Screen.Home.route + "?userName=${body.user.name}"
-                                        ) {
-                                            popUpTo(Screen.Login.route) { inclusive = true }
+                                        val uid   = body.user.id
+                                        val uname = Uri.encode(body.user.name)
+
+                                        navController.navigate("home_screen/$uid/$uname") {
+                                            popUpTo("login_screen") { inclusive = true }   // 🔥 biar tidak kembali ke login
+                                            launchSingleTop = true
                                         }
                                     }
 
@@ -195,6 +193,7 @@ fun LoginScreen(navController: NavController) {
                     ) {
                         Text("LOGIN", color = Color.White, fontWeight = FontWeight.Bold)
                     }
+
 
                     Button(
                         onClick = { navController.navigate(Screen.SignUp.route) },

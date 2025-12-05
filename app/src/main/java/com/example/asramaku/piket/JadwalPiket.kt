@@ -1,5 +1,7 @@
 package com.example.asramaku.piket
 
+import android.annotation.SuppressLint
+import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
@@ -7,8 +9,10 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
@@ -22,18 +26,37 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.asramaku.navigation.Screen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import java.net.HttpURLConnection
+import java.net.URL
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import com.example.asramaku.navigation.Screen
 
+// =======================
+// DATA CLASS
+// =======================
+data class PiketResponse(
+    val id: Int,
+    val userId: Int,
+    val tanggal: String,
+    val status: String
+)
+
+// =======================
+// SCREEN
+// =======================
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JadwalPiketScreen(
     navController: NavController,
-    namaLogin: String = "Clara"
+    userId: Int,
+    namaLogin: String
 ) {
     val backgroundColor = Color(0xFFFFE7C2)
     val cardColor = Color(0xFFB6D9D1)
@@ -42,22 +65,19 @@ fun JadwalPiketScreen(
     val buttonGanti = Color(0xFFFF3B30)
 
     var searchQuery by remember { mutableStateOf("") }
-    val snackbarHostState = remember { SnackbarHostState() }
+    var piketList by remember { mutableStateOf<List<PiketResponse>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
 
-    // Daftar tanggal jadwal
-    val jadwalList = listOf(
-        "2025-10-28",
-        "2025-10-30",
-        "2025-10-31",
-        "2026-11-02",
-        "2026-11-05"
-    )
+    // Fetch data dari server sesuai userId
+    LaunchedEffect(userId) {
+        coroutineScope.launch {
+            piketList = getPiketFromServer(userId)
+        }
+    }
 
     val currentDate = LocalDate.now()
     val currentTime = LocalTime.now()
-
-    val filteredList = jadwalList.filter { it.contains(searchQuery) }
+    val filteredList = piketList.filter { it.tanggal.contains(searchQuery) }
 
     Scaffold(
         topBar = {
@@ -84,18 +104,18 @@ fun JadwalPiketScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
-        containerColor = backgroundColor,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        containerColor = backgroundColor
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
+                .padding(16.dp)
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Search Bar
+            // Search bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -108,17 +128,11 @@ fun JadwalPiketScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     textStyle = TextStyle(fontSize = 14.sp, color = Color.Black),
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.padding(horizontal = 16.dp),
                     singleLine = true,
                     decorationBox = { innerTextField ->
                         if (searchQuery.isEmpty()) {
-                            Text(
-                                text = "Search (yyyy-MM-dd)",
-                                color = Color.Gray,
-                                fontSize = 14.sp
-                            )
+                            Text("Search (yyyy-MM-dd)", color = Color.Gray, fontSize = 14.sp)
                         }
                         innerTextField()
                     }
@@ -127,88 +141,161 @@ fun JadwalPiketScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Daftar Jadwal
+            // List piket
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                filteredList.forEach { tanggalStr ->
-                    val tanggalPiket = LocalDate.parse(tanggalStr)
-                    val formatterDisplay = DateTimeFormatter.ofPattern("dd - MM - yyyy")
-
-                    // Tentukan status
-                    val status = when {
-                        currentDate.isBefore(tanggalPiket) -> "Belum Dikerjakan"
-                        currentDate.isEqual(tanggalPiket) && currentTime.isBefore(LocalTime.of(17, 0)) -> "Belum Dikerjakan"
-                        else -> "Ganti Piket"
-                    }
-
-                    val buttonColor by animateColorAsState(
-                        targetValue = if (status == "Ganti Piket") buttonGanti else buttonSelesai
-                    )
-
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .animateContentSize(),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = cardColor)
+                if (filteredList.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Nama : $namaLogin",
-                                    fontSize = 16.sp,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = "Tanggal : ${tanggalPiket.format(formatterDisplay)}",
-                                    fontSize = 14.sp,
-                                    color = Color.White
-                                )
-                            }
+                        Text("Tidak ada jadwal piket", color = Color.Gray)
+                    }
+                } else {
+                    filteredList.forEach { piket ->
+                        val tanggalPiket = try {
+                            LocalDate.parse(piket.tanggal)
+                        } catch (e: Exception) {
+                            LocalDate.now()
+                        }
+                        val formatter = DateTimeFormatter.ofPattern("dd - MM - yyyy")
 
-                            // Tombol dinamis
-                            Box(
+                        val status = when {
+                            currentDate.isBefore(tanggalPiket) -> "Belum Dikerjakan"
+                            currentDate.isEqual(tanggalPiket) && currentTime.isBefore(LocalTime.of(17, 0)) -> "Belum Dikerjakan"
+                            else -> "Ganti Piket"
+                        }
+
+
+                        val buttonColor by animateColorAsState(
+                            if (status == "Ganti Piket") buttonGanti else buttonSelesai
+                        )
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(80.dp)
+                                .animateContentSize(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = cardColor)
+                        ) {
+                            Row(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(buttonColor)
-                                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                                    .clickable {
-                                        if (status == "Belum Dikerjakan") {
-                                            navController.navigate(
-                                                Screen.BelumDikerjakan.createRoute(
-                                                    nama = namaLogin,
-                                                    tanggal = tanggalPiket.toString()
-                                                )
-                                            )
-                                        } else if (status == "Ganti Piket") {
-                                            navController.navigate(
-                                                Screen.GantiPiket.createRoute(
-                                                    nama = namaLogin,
-                                                    tanggal = tanggalPiket.toString()
-                                                )
-                                            )
-                                        }
-                                    },
-                                contentAlignment = Alignment.Center
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = status,
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                Column {
+                                    Text(
+                                        text = "Nama : $namaLogin",
+                                        fontSize = 16.sp,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "Tanggal : ${tanggalPiket.format(formatter)}",
+                                        fontSize = 14.sp,
+                                        color = Color.White
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(buttonColor)
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                                        .clickable {
+                                            val encodedTanggal = Uri.encode(tanggalPiket.toString())
+                                            if (status == "Belum Dikerjakan") {
+                                                navController.navigate(
+                                                    Screen.BelumDikerjakan.createRoute(
+                                                        nama = namaLogin,
+                                                        tanggal = encodedTanggal
+                                                    )
+                                                )
+                                            } else {
+                                                navController.navigate(
+                                                    Screen.GantiPiket.createRoute(
+                                                        nama = namaLogin,
+                                                        tanggal = encodedTanggal
+                                                    )
+                                                )
+                                            }
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(text = status, color = Color.White, fontSize = 12.sp)
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+// =====================
+// API FUNCTION
+// =====================
+@SuppressLint("NewApi")
+suspend fun getPiketFromServer(userId: Int): List<PiketResponse> {
+    return withContext(Dispatchers.IO) {
+        try {
+            // 1. Bikin koneksi
+            val url = URL("http://10.0.2.2:3000/api/piket/$userId")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.connectTimeout = 5000
+            conn.readTimeout = 5000
+
+            // 2. Baca response
+            val result = conn.inputStream.bufferedReader().readText()
+            println("Hasil fetch dari server: $result") // <- cek di Logcat
+
+            val piketList = mutableListOf<PiketResponse>()
+
+            // 3. Cek apakah JSON berbentuk array atau object
+            if (result.trim().startsWith("[")) {
+                // JSON langsung array
+                val jsonArr = JSONArray(result)
+                for (i in 0 until jsonArr.length()) {
+                    val obj = jsonArr.getJSONObject(i)
+                    val tanggalValue = obj.optString("tanggal", LocalDate.now().toString())
+                    piketList.add(
+                        PiketResponse(
+                            id = obj.optInt("id", 0),
+                            userId = obj.optInt("userId", 0),
+                            tanggal = tanggalValue,
+                            status = obj.optString("status", "Belum Dikerjakan")
+                        )
+                    )
+                }
+            } else if (result.trim().startsWith("{")) {
+                // JSON object, kemungkinan ada field "data"
+                val jsonObj = org.json.JSONObject(result)
+                val jsonArr = jsonObj.optJSONArray("data") ?: JSONArray()
+                for (i in 0 until jsonArr.length()) {
+                    val obj = jsonArr.getJSONObject(i)
+                    val tanggalValue = obj.optString("tanggal", LocalDate.now().toString())
+                    piketList.add(
+                        PiketResponse(
+                            id = obj.optInt("id", 0),
+                            userId = obj.optInt("userId", 0),
+                            tanggal = tanggalValue,
+                            status = obj.optString("status", "Belum Dikerjakan")
+                        )
+                    )
+                }
+            } else {
+                println("Response tidak dikenali: $result")
+            }
+
+            // 4. Kembalikan list
+            piketList
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
         }
     }
 }

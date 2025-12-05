@@ -1,5 +1,6 @@
 package com.example.asramaku.screens
 
+import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,7 +25,7 @@ import kotlinx.coroutines.delay
 import com.example.asramaku.data.preferences.UserPreferences
 
 @Composable
-fun HomeScreen(navController: NavController, userName: String?) {
+fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
     val backgroundColor = Color(0xFFFFE7C2)
     val moduleButtonColor = Color(0xFFB6DFD7)
     val moduleButtonColor2 = Color(0xFFD9ECE7)
@@ -168,8 +169,10 @@ fun HomeScreen(navController: NavController, userName: String?) {
                         backgroundColor = moduleButtonColor,
                         textColor = textColor
                     ) {
-                        navController.navigate(Screen.Duty.route)
+                        val namaLogin = displayName // ambil dari nama yang sudah kamu tentukan di atas
+                        navController.navigate("duty_module_screen/${userId}/${Uri.encode(namaLogin)}")
                     }
+
                 }
             }
 

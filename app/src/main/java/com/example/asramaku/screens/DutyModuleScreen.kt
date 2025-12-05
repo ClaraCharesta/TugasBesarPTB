@@ -1,6 +1,7 @@
 package com.example.asramaku.screens
 
 import android.annotation.SuppressLint
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,7 +26,11 @@ import com.example.asramaku.navigation.Screen
 @SuppressLint("NewApi")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DutyModuleScreen(navController: NavController) {
+fun DutyModuleScreen(
+    navController: NavController,
+    userId: Int,
+    namaLogin: String
+) {
     val topColor = Color(0xFFD9ECE7)
     val bottomColor = Color(0xFFD9ECE7)
     val buttonColor = Color(0xFF325B5C)
@@ -52,9 +57,7 @@ fun DutyModuleScreen(navController: NavController) {
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
         containerColor = backgroundColor
@@ -65,13 +68,11 @@ fun DutyModuleScreen(navController: NavController) {
                 .padding(innerPadding)
                 .background(backgroundColor)
         ) {
-            // 🎨 Desain background bulat atas & bawah
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 🔹 Card setengah bulatan atas
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -92,7 +93,6 @@ fun DutyModuleScreen(navController: NavController) {
                     )
                 }
 
-                // 🔹 Card setengah bulatan bawah
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -104,7 +104,6 @@ fun DutyModuleScreen(navController: NavController) {
                 )
             }
 
-            // Konten utama (Tombol-tombol)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -113,9 +112,10 @@ fun DutyModuleScreen(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                // 🔹 Tombol "Jadwal Piket Saya"
                 Button(
-                    onClick = { navController.navigate(Screen.JadwalPiket.route) },
+                    onClick = {
+                        navController.navigate("jadwal_piket_screen/$userId/$namaLogin")
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(55.dp),
@@ -130,9 +130,9 @@ fun DutyModuleScreen(navController: NavController) {
                     )
                 }
 
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 🔹 Tombol "Rekap Piket Saya"
                 Button(
                     onClick = { navController.navigate(Screen.RekapPiket.route) },
                     modifier = Modifier
