@@ -33,11 +33,11 @@ sealed class Screen(val route: String) {
     object Welcome : Screen("welcome_screen")
 
     object Home : Screen("home?userName={userName}") {
-        fun createRoute(userName: String) = "hhome?userName=${Uri.encode(userName)}"
+        fun createRoute(userName: String) = "home?userName=${Uri.encode(userName)}"
     }
 
     object Duty : Screen("duty_screen")
-    object Report : Screen("report_screen")
+    object Report : Screen("report")
     object Payment : Screen("payment_screen")
     object JadwalPiket : Screen("jadwal_piket_screen")
 
@@ -197,7 +197,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(route = Screen.Report.route) {
-            ReportScreen(navController = navController)
+            ReportScreen(navController, userName = null)
         }
 
         composable(route = Screen.Payment.route) {
@@ -333,10 +333,6 @@ fun NavGraph(navController: NavHostController) {
         // =====================================================
         // FITUR LAPORAN KERUSAKAN
         // =====================================================
-
-        composable("dashboard") {
-            ReportScreen(navController = navController)
-        }
 
         composable("buat_laporan") {
             BuatLaporan(navController = navController)
