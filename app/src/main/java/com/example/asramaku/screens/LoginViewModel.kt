@@ -9,19 +9,30 @@ class LoginViewModel : ViewModel() {
 
     private val repo = AuthRepository()
 
-    fun login(email: String, password: String, onResult: (Boolean, String) -> Unit) {
+    // Boolean = sukses atau tidak
+    // String  = nama user
+    // String  = token ATAU pesan error
+    fun login(email: String, password: String, onResult: (Boolean, String, String) -> Unit) {
         viewModelScope.launch {
             try {
                 val response = repo.login(email, password)
 
                 if (response.isSuccessful) {
-                    onResult(true, response.body()?.user?.name ?: "")
+                    val body = response.body()
+                    val token = body?.token ?: ""
+                    val name = body?.user?.name ?: ""
+
+                    // sukses → kirim name + token
+                    onResult(true, name, token)
+
                 } else {
-                    onResult(false, "Email atau password salah")
+                    // gagal dari server (400/401)
+                    onResult(false, "", "Email atau password salah")
                 }
 
             } catch (e: Exception) {
-                onResult(false, "Tidak dapat terhubung ke server")
+                // gagal koneksi
+                onResult(false, "", "Tidak dapat terhubung ke server")
             }
         }
     }

@@ -3,7 +3,6 @@ package com.example.asramaku.laporan
 import android.Manifest
 import android.content.Context
 import android.net.Uri
-import android.os.Environment
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,8 +16,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,14 +24,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.asramaku.model.DummyData
 import com.example.asramaku.model.Notifikasi
 import com.example.asramaku.ui.theme.*
-import java.io.File
-import java.text.SimpleDateFormat
+import com.example.asramaku.utils.createImageUri
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,6 +78,7 @@ fun EditLaporan(navController: NavController, laporanId: String) {
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
+            // pakai util terpusat
             tempCameraUri = createImageUri(context)
             tempCameraUri?.let { cameraLauncher.launch(it) }
         } else {
@@ -356,28 +352,5 @@ fun EditLaporan(navController: NavController, laporanId: String) {
             },
             containerColor = Color.White
         )
-    }
-}
-
-// Helper function untuk membuat URI untuk kamera
-private fun createImageUri(context: Context): Uri? {
-    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-    val imageFileName = "JPEG_${timeStamp}_"
-    val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-
-    return try {
-        val imageFile = File.createTempFile(
-            imageFileName,
-            ".jpg",
-            storageDir
-        )
-        FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.provider",
-            imageFile
-        )
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
     }
 }
