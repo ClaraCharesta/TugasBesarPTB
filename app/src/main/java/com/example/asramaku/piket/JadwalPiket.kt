@@ -21,11 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.asramaku.data.local.TokenManager
 import com.example.asramaku.navigation.Screen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -58,6 +60,16 @@ fun JadwalPiketScreen(
     userId: Int,
     namaLogin: String
 ) {
+    // ----- ambil session (fallback) tanpa merubah UI -----
+    val context = LocalContext.current
+    val tokenManager = remember { TokenManager(context) }
+    val savedUserId by tokenManager.userId.collectAsState(initial = 0)
+    val savedUserName by tokenManager.userName.collectAsState(initial = "")
+
+    // effective values: gunakan argumen kalau ada, kalau tidak pakai DataStore
+    val effectiveUserId = remember(userId, savedUserId) { if (userId != 0) userId else savedUserId }
+    val effectiveNamaLogin = remember(namaLogin, savedUserName) { if (namaLogin.isNotBlank()) namaLogin else savedUserName }
+
     val backgroundColor = Color(0xFFFFE7C2)
     val cardColor = Color(0xFFB6D9D1)
     val textFieldBg = Color(0xFFE6E1DC)
@@ -68,10 +80,15 @@ fun JadwalPiketScreen(
     var piketList by remember { mutableStateOf<List<PiketResponse>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
 
-    // Fetch data dari server sesuai userId
-    LaunchedEffect(userId) {
-        coroutineScope.launch {
-            piketList = getPiketFromServer(userId)
+    // Fetch data dari server sesuai effectiveUserId
+    LaunchedEffect(effectiveUserId) {
+        if (effectiveUserId != 0) {
+            coroutineScope.launch {
+                piketList = getPiketFromServer(effectiveUserId)
+            }
+        } else {
+            // kalau belum ada userId (misal belum login), kosongi list
+            piketList = emptyList()
         }
     }
 
@@ -165,7 +182,6 @@ fun JadwalPiketScreen(
                             else -> "Ganti Piket"
                         }
 
-
                         val buttonColor by animateColorAsState(
                             if (status == "Ganti Piket") buttonGanti else buttonSelesai
                         )
@@ -186,8 +202,9 @@ fun JadwalPiketScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column {
+                                    // TAMPILAN UI TETAP SAMA: gunakan effectiveNamaLogin
                                     Text(
-                                        text = "Nama : $namaLogin",
+                                        text = "Nama : $effectiveNamaLogin",
                                         fontSize = 16.sp,
                                         color = Color.White,
                                         fontWeight = FontWeight.SemiBold
@@ -207,16 +224,17 @@ fun JadwalPiketScreen(
                                         .clickable {
                                             val encodedTanggal = Uri.encode(tanggalPiket.toString())
                                             if (status == "Belum Dikerjakan") {
+                                                // tetap gunakan createRoute sesuai project-mu (tidak diubah)
                                                 navController.navigate(
                                                     Screen.BelumDikerjakan.createRoute(
-                                                        nama = namaLogin,
+                                                        nama = effectiveNamaLogin,
                                                         tanggal = encodedTanggal
                                                     )
                                                 )
                                             } else {
                                                 navController.navigate(
                                                     Screen.GantiPiket.createRoute(
-                                                        nama = namaLogin,
+                                                        nama = effectiveNamaLogin,
                                                         tanggal = encodedTanggal
                                                     )
                                                 )

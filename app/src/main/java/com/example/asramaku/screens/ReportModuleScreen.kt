@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,13 +18,26 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.asramaku.navigation.Screen
 import com.example.asramaku.ui.theme.*
+import com.example.asramaku.data.preferences.UserPreferences
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportScreen(
     navController: NavController,
-    userName: String = "User"
+    userName: String?
 ) {
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferences(context) }
+    val storedName = userPrefs.getName()
+
+    // pilih nama mana yang dipakai
+    val displayName = when {
+        !userName.isNullOrBlank() -> userName
+        !storedName.isNullOrBlank() -> storedName
+        else -> "User"
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -32,19 +46,11 @@ fun ReportScreen(
                         text = "Laporan Kehilangan",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Gray
+                        color = DarkTeal
                     )
                 },
                 navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            // Navigasi eksplisit ke HomeScreen
-                            navController.navigate(Screen.Home.createRoute(userName)) {
-                                popUpTo(Screen.Home.route) { inclusive = true }
-                                launchSingleTop = true
-                            }
-                        }
-                    ) {
+                    IconButton(onClick = { navController.navigateUp() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
@@ -65,16 +71,12 @@ fun ReportScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Hallo, $userName!",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = DarkTeal
-            )
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = "Silakan laporkan jika terjadi kerusakan, terima kasih",
                 fontSize = 14.sp,
-                color = Color.Gray,
+                color = DarkTeal,
                 modifier = Modifier.padding(top = 4.dp)
             )
 

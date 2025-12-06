@@ -16,7 +16,7 @@ val DarkBackground = Color(0xFF121212)
 val DarkSurface = Color(0xFF1E1E1E)
 
 val Teal = Color(0xFF00897B)
-val LightYellow = Color(0xFFFFF8E1)
+val LightYellow = Color(0xFFFFE7C2)
 val RedButton = Color(0xFFD32F2F)
 val DarkYellow = Color(0xFFFFC107)
 // Warna biru kehijauan (teal)

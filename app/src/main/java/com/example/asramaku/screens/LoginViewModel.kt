@@ -9,19 +9,51 @@ class LoginViewModel : ViewModel() {
 
     private val repo = AuthRepository()
 
-    fun login(email: String, password: String, onResult: (Boolean, String) -> Unit) {
+    /**
+     * Callback format:
+     *  success : Boolean          → true = berhasil login
+     *  userId : Int               → ID pengguna (default 0 jika gagal)
+     *  userName : String          → nama user
+     *  token : String             → token atau pesan error
+     */
+    fun login(email: String, password: String, onResult: (Boolean, Int, String, String) -> Unit) {
         viewModelScope.launch {
             try {
                 val response = repo.login(email, password)
 
-                if (response.isSuccessful) {
-                    onResult(true, response.body()?.user?.name ?: "")
+                // pastikan sukses *dan* body != null
+                if (response.isSuccessful && response.body() != null) {
+                    val body = response.body()!!
+
+                    // aman: gunakan fallback jika field null
+                    val userId = body.user?.id ?: 0
+                    val userName = body.user?.name ?: ""
+                    val token = body.token ?: ""
+
+                    // debug log (cek di Logcat)
+                    println("LOGIN OK — token=${token}, userId=${userId}, userName=${userName}")
+
+                    // kirim hasil sukses
+                    onResult(true, userId, userName, token)
+
+                    // HENTIKAN eksekusi coroutine setelah sukses
+                    return@launch
                 } else {
-                    onResult(false, "Email atau password salah")
+                    // ambil pesan error dari server bila ada
+                    val err = try {
+                        response.errorBody()?.string() ?: "Email atau password salah"
+                    } catch (_: Exception) {
+                        "Email atau password salah"
+                    }
+                    onResult(false, 0, "", err)
+                    return@launch
                 }
 
             } catch (e: Exception) {
-                onResult(false, "Tidak dapat terhubung ke server")
+                // cetak stacktrace ke Logcat supaya bisa dilihat
+                e.printStackTrace()
+                onResult(false, 0, "", "Tidak dapat terhubung ke server")
+                return@launch
             }
         }
     }

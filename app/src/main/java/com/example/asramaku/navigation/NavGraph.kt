@@ -116,8 +116,8 @@ fun NavGraph(navController: NavHostController) {
         // This preserves existing HomeScreen signature (navController, userName: String?)
         // so you DON'T need to modify HomeScreen file.
         // ========================
-        // ========================
-// HOME
+// ========================
+// HOME FIX SESUAI LOGIN
 // ========================
         composable(
             route = "home_screen/{userId}/{userName}",
@@ -139,6 +139,7 @@ fun NavGraph(navController: NavHostController) {
 
 
 
+
         // ========================
         // DUTY - use exact route from sealed class
         // ========================
@@ -149,10 +150,15 @@ fun NavGraph(navController: NavHostController) {
                 navArgument("nama") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-            val namaLogin = backStackEntry.arguments?.getString("nama") ?: ""
 
-            DutyModuleScreen(navController, userId, namaLogin)
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+            val nama = backStackEntry.arguments?.getString("nama") ?: ""
+
+            DutyModuleScreen(
+                navController = navController,
+                userId = userId,
+                namaLogin = nama  // <-- ini yang tadinya bikin error
+            )
         }
 
 
@@ -163,7 +169,7 @@ fun NavGraph(navController: NavHostController) {
         // JADWAL PIKET
         // ========================
         composable(
-            route = Screen.JadwalPiket.route,
+            route = "jadwal_piket_screen/{userId}/{nama}",
             arguments = listOf(
                 navArgument("userId") { type = NavType.IntType },
                 navArgument("nama") { type = NavType.StringType }
@@ -171,8 +177,10 @@ fun NavGraph(navController: NavHostController) {
         ) { backStackEntry ->
             val userId = backStackEntry.arguments?.getInt("userId") ?: 0
             val namaLogin = backStackEntry.arguments?.getString("nama") ?: ""
+
             JadwalPiketScreen(navController, userId, namaLogin)
         }
+
 
         // ========================
         // REKAP PIKET
@@ -262,7 +270,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(route = Screen.Report.route) {
-            ReportScreen(navController = navController)
+            ReportScreen(navController, userName = null)
         }
 
         composable(route = Screen.Payment.route) {
@@ -396,9 +404,7 @@ fun NavGraph(navController: NavHostController) {
         // ========================
         // LAPORAN KERUSAKAN
         // ========================
-        composable("dashboard") {
-            ReportScreen(navController = navController)
-        }
+
 
         composable("buat_laporan") {
             BuatLaporan(navController = navController)

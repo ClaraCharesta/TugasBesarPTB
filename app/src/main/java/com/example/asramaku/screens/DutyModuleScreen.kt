@@ -31,6 +31,10 @@ fun DutyModuleScreen(
     userId: Int,
     namaLogin: String
 ) {
+
+    // Pastikan namaLogin tidak null setelah login
+    val namaUser = Uri.decode(namaLogin)  // diterima dari route
+
     val topColor = Color(0xFFD9ECE7)
     val bottomColor = Color(0xFFD9ECE7)
     val buttonColor = Color(0xFF325B5C)
@@ -41,7 +45,7 @@ fun DutyModuleScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Piket",
+                        text = "Piket - $namaUser",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF325B5C),
@@ -62,17 +66,20 @@ fun DutyModuleScreen(
         },
         containerColor = backgroundColor
     ) { innerPadding ->
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(backgroundColor)
         ) {
+
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -112,9 +119,10 @@ fun DutyModuleScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
+
                 Button(
                     onClick = {
-                        navController.navigate("jadwal_piket_screen/$userId/$namaLogin")
+                        navController.navigate("jadwal_piket_screen/$userId/${Uri.encode(namaUser)}")
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -129,7 +137,6 @@ fun DutyModuleScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-
 
                 Spacer(modifier = Modifier.height(16.dp))
 

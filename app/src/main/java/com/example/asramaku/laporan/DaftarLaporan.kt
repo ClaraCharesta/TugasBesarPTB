@@ -204,7 +204,7 @@ fun LaporanCard(
                     onClick = onEditClick,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = DarkYellow
+                        containerColor = LightYellow
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {

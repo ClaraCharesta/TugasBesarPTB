@@ -1,6 +1,5 @@
 package com.example.asramaku.screens
 
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
@@ -22,28 +21,30 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.asramaku.R
+import com.example.asramaku.data.local.TokenManager
 import com.example.asramaku.navigation.Screen
-import com.example.asramaku.data.remote.RetrofitClient
-import com.example.asramaku.data.model.LoginRequest
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun LoginScreen(navController: NavController) {
-    val backgroundColor = Color(0xFFFFE7C2)
-    val darkButtonColor = Color(0xFF2D6A6A)
-    val lightButtonColor = Color(0xFF91C9C0)
-    val textColor = Color(0xFF324E52)
+fun LoginScreen(navController: NavController, vm: LoginViewModel = viewModel()) {
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val tokenManager = remember { TokenManager(context) }
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }   // ✅ TAMBAHAN SAJA
 
+    val backgroundColor = Color(0xFFFFE7C2)
+    val darkButtonColor = Color(0xFF2D6A6A)
+    val lightButtonColor = Color(0xFF91C9C0)
+    val textColor = Color(0xFF324E52)
     val scrollState = rememberScrollState()
 
     var showLogo by remember { mutableStateOf(false) }
@@ -51,158 +52,130 @@ fun LoginScreen(navController: NavController) {
     var showButtons by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(100)
         showLogo = true
-        delay(150)
         showForm = true
-        delay(200)
         showButtons = true
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor),
+        modifier = Modifier.fillMaxSize().background(backgroundColor),
         contentAlignment = Alignment.Center
     ) {
+
         Column(
+            modifier = Modifier.fillMaxWidth().verticalScroll(scrollState).padding(vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
-                .padding(vertical = 32.dp)
+            verticalArrangement = Arrangement.Center
         ) {
-            // 🔹 Logo
-            AnimatedVisibility(
-                visible = showLogo,
-                enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
-                exit = fadeOut()
-            ) {
+
+            // ======================= LOGO =======================
+            AnimatedVisibility(visible = showLogo, enter = fadeIn(), exit = fadeOut()) {
                 Image(
                     painter = painterResource(id = R.drawable.school_icon),
-                    contentDescription = "Login Illustration",
-                    modifier = Modifier
-                        .size(200.dp)
-                        .padding(bottom = 30.dp)
+                    contentDescription = "Login",
+                    modifier = Modifier.size(200.dp).padding(bottom = 30.dp)
                 )
             }
 
-            // 🔹 Input Fields
-            AnimatedVisibility(
-                visible = showForm,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut()
-            ) {
+            // ======================= FORM INPUT =======================
+            AnimatedVisibility(visible = showForm, enter = fadeIn(), exit = fadeOut()) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
                         label = { Text("Email") },
-                        shape = RoundedCornerShape(16.dp),
                         singleLine = true,
-                        modifier = Modifier
-                            .padding(horizontal = 40.dp, vertical = 8.dp)
-                            .fillMaxWidth(0.85f)
+                        modifier = Modifier.padding(horizontal = 40.dp).fillMaxWidth(0.85f)
                     )
 
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Password") },
-                        shape = RoundedCornerShape(16.dp),
                         singleLine = true,
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        visualTransformation =
+                            if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
-                            val icon = if (passwordVisible)
-                                painterResource(id = R.drawable.ic_visibility_off)
-                            else
-                                painterResource(id = R.drawable.ic_visibility)
                             Icon(
-                                painter = icon,
+                                painter = painterResource(
+                                    if (passwordVisible) R.drawable.ic_visibility_off
+                                    else R.drawable.ic_visibility
+                                ),
                                 contentDescription = null,
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .clickable { passwordVisible = !passwordVisible }
+                                modifier = Modifier.size(22.dp).clickable {
+                                    passwordVisible = !passwordVisible
+                                }
                             )
                         },
                         modifier = Modifier
-                            .padding(horizontal = 40.dp, vertical = 4.dp)
+                            .padding(horizontal = 40.dp, vertical = 8.dp)
                             .fillMaxWidth(0.85f)
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Forgot Password?",
-                        color = textColor,
-                        fontSize = 14.sp,
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .padding(end = 40.dp)
-                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 🔹 Buttons
-            AnimatedVisibility(
-                visible = showButtons,
-                enter = fadeIn() + slideInVertically(initialOffsetY = { it / 3 }),
-                exit = fadeOut()
-            ) {
+            // ======================= BUTTON LOGIN =======================
+            AnimatedVisibility(visible = showButtons, enter = fadeIn(), exit = fadeOut()) {
+
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
                     Button(
                         onClick = {
-                            scope.launch {
+                            if (isLoading) return@Button   // ✅ CEGAH DOUBLE KLIK
+                            isLoading = true
 
-                                val response = try {
-                                    RetrofitClient.instance.login(LoginRequest(email, password))
-                                } catch (_: Exception) {
-                                    Toast.makeText(context, "Tidak dapat terhubung ke server", Toast.LENGTH_SHORT).show()
-                                    return@launch
-                                }
+                            vm.login(email, password) { success, userId, userName, tokenOrMessage ->
 
-                                if (response.isSuccessful) {
-                                    val body = response.body()
+                                isLoading = false
 
-                                    if (body != null) {
-                                        Toast.makeText(context, "Login sukses", Toast.LENGTH_SHORT).show()
+                                if (success) {
+                                    val token = tokenOrMessage
 
-                                        val uid   = body.user.id
-                                        val uname = Uri.encode(body.user.name)
+                                    scope.launch {
+                                        tokenManager.saveSession(
+                                            token = token,
+                                            userId = userId,
+                                            userName = userName
+                                        )
+                                    }
 
-                                        navController.navigate("home_screen/$uid/$uname") {
-                                            popUpTo("login_screen") { inclusive = true }   // 🔥 biar tidak kembali ke login
-                                            launchSingleTop = true
-                                        }
+                                    Toast.makeText(context, "Login sukses", Toast.LENGTH_SHORT).show()
+
+                                    navController.navigate(
+                                        "home_screen/$userId/$userName"   // ✅ FIX ROUTE
+                                    ) {
+                                        popUpTo(Screen.Login.route) { inclusive = true }
                                     }
 
                                 } else {
-                                    Toast.makeText(context, "Email atau password salah", Toast.LENGTH_SHORT).show()
-                                }
+                                    Toast.makeText(context, tokenOrMessage, Toast.LENGTH_SHORT).show()
+
+                            }
                             }
                         },
+                        enabled = !isLoading,   // ✅ TOMBOL TERKUNCI SAAT LOGIN
                         colors = ButtonDefaults.buttonColors(containerColor = darkButtonColor),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .padding(horizontal = 40.dp, vertical = 4.dp)
-                            .fillMaxWidth(0.85f)
-                            .height(50.dp)
+                        modifier = Modifier.fillMaxWidth(0.85f).height(50.dp)
                     ) {
-                        Text("LOGIN", color = Color.White, fontWeight = FontWeight.Bold)
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                        } else {
+                            Text("LOGIN", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
                     }
 
-
                     Button(
-                        onClick = { navController.navigate(Screen.SignUp.route) },
+                        onClick = { if (!isLoading) navController.navigate(Screen.SignUp.route) },
                         colors = ButtonDefaults.buttonColors(containerColor = lightButtonColor),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .padding(horizontal = 40.dp, vertical = 4.dp)
-                            .fillMaxWidth(0.85f)
-                            .height(50.dp)
+                        modifier = Modifier.fillMaxWidth(0.85f).height(50.dp)
                     ) {
                         Text("SIGN UP", color = textColor, fontWeight = FontWeight.Bold)
                     }
