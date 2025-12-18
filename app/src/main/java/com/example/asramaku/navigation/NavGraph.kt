@@ -7,11 +7,13 @@ import androidx.annotation.RequiresApi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
+import com.example.asramaku.data.remote.RetrofitClient
 import com.example.asramaku.model.PembayaranData
 import com.example.asramaku.screens.*
 import com.example.asramaku.pembayaran.*
@@ -19,12 +21,11 @@ import com.example.asramaku.piket.JadwalPiketScreen
 import com.example.asramaku.piket.jadwalpiket.BelumDikerjakanScreen
 import com.example.asramaku.piket.rekap.DetailPiketSayaScreen
 import com.example.asramaku.piket.RekapPiketSayaScreen
-import com.example.asramaku.piket.jadwalpiket.GantiPiketScreen
-import com.example.asramaku.piket.slot.AmbilSlotScreen
 import java.time.LocalDate
 
 // Tambahan import modul laporan
 import com.example.asramaku.laporan.*
+import com.example.asramaku.piket.jadwalpiket.GantiPiketCalendarScreen
 
 /**
  * Nav routes: keep base names here and provide createRoute helpers.
@@ -56,26 +57,45 @@ sealed class Screen(val route: String) {
         fun createRoute(userId: Int, nama: String) = "jadwal_piket_screen/$userId/${Uri.encode(nama)}"
     }
 
-    object BelumDikerjakan : Screen("belum_dikerjakan_screen/{nama}/{tanggal}") {
-        fun createRoute(nama: String, tanggal: String) = "belum_dikerjakan_screen/${Uri.encode(nama)}/$tanggal"
+    object BelumDikerjakan :
+        Screen("belum_dikerjakan_screen/{userId}/{jadwalId}/{nama}/{tanggal}") {
+
+        fun createRoute(
+            userId: Int,
+            jadwalId: Int,
+            nama: String,
+            tanggal: String
+        ) = "belum_dikerjakan_screen/$userId/$jadwalId/${Uri.encode(nama)}/$tanggal"
     }
 
-    object DetailPiketSaya : Screen("detail_piket_screen/{nama}/{tanggal}?fotoUri={fotoUri}") {
-        fun createRoute(nama: String, tanggal: String, fotoUri: String? = null): String {
-            return if (!fotoUri.isNullOrEmpty()) {
-                "detail_piket_screen/${Uri.encode(nama)}/$tanggal?fotoUri=${Uri.encode(fotoUri)}"
+
+
+
+    object DetailPiketSaya : Screen("detail_piket_screen/{tanggal}?userId={userId}") {
+        fun createRoute(tanggal: String, userId: Int? = null): String {
+            return if (userId != null && userId != 0) {
+                "detail_piket_screen/$tanggal?userId=$userId"
             } else {
-                "detail_piket_screen/${Uri.encode(nama)}/$tanggal"
+                "detail_piket_screen/$tanggal"
             }
         }
     }
 
-    object GantiPiket : Screen("ganti_piket_screen/{nama}/{tanggal}") {
-        fun createRoute(nama: String, tanggal: String) = "ganti_piket_screen/${Uri.encode(nama)}/$tanggal"
+    object GantiPiket : Screen("ganti_piket_screen/{nama}/{piketId}/{tanggal}") {
+        fun createRoute(nama: String, piketId: Int, tanggal: String) =
+            "ganti_piket_screen/${Uri.encode(nama)}/$piketId/${Uri.encode(tanggal)}"
     }
 
-    object RekapPiket : Screen("rekap_piket_screen")
-    object AmbilSlot : Screen("ambil_slot_screen")
+
+
+    object RekapPiket : Screen("rekap_piket_screen/{userId}/{namaLogin}") {
+        fun createRoute(userId: Int, namaLogin: String) = "rekap_piket_screen/$userId/${Uri.encode(namaLogin)}"
+    }
+
+
+
+
+
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -185,9 +205,25 @@ fun NavGraph(navController: NavHostController) {
         // ========================
         // REKAP PIKET
         // ========================
-        composable(route = Screen.RekapPiket.route) {
-            RekapPiketSayaScreen(navController = navController)
+        composable(
+            route = Screen.RekapPiket.route,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.IntType },
+                navArgument("namaLogin") { type = NavType.StringType }   // ⬅️ tambahkan namaLogin
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+            val namaLogin = backStackEntry.arguments?.getString("namaLogin") ?: ""
+
+            RekapPiketSayaScreen(
+                navController = navController,
+                userId = userId,
+                namaLogin = namaLogin
+            )
         }
+
+
+
 
         // ========================
         // BELUM DIKERJAKAN
@@ -195,22 +231,29 @@ fun NavGraph(navController: NavHostController) {
         composable(
             route = Screen.BelumDikerjakan.route,
             arguments = listOf(
+                navArgument("userId") { type = NavType.IntType },
+                navArgument("jadwalId") { type = NavType.IntType },
                 navArgument("nama") { type = NavType.StringType },
                 navArgument("tanggal") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val nama = backStackEntry.arguments?.getString("nama") ?: "User"
-            val tanggalStr =
-                backStackEntry.arguments?.getString("tanggal") ?: LocalDate.now().toString()
+
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+            val jadwalId = backStackEntry.arguments?.getInt("jadwalId") ?: 0
+            val nama = backStackEntry.arguments?.getString("nama") ?: ""
+            val tanggalStr = backStackEntry.arguments?.getString("tanggal") ?: ""
             val tanggal = LocalDate.parse(tanggalStr)
 
             BelumDikerjakanScreen(
                 navController = navController,
+                userId = userId,
+                jadwalId = jadwalId,
                 nama = nama,
-                tanggal = tanggal,
-                onSelesai = { }
+                tanggal = tanggal
             )
         }
+
+
 
         // ========================
         // DETAIL PIKET SAYA (optional fotoUri)
@@ -218,187 +261,155 @@ fun NavGraph(navController: NavHostController) {
         composable(
             route = Screen.DetailPiketSaya.route,
             arguments = listOf(
-                navArgument("nama") { type = NavType.StringType },
                 navArgument("tanggal") { type = NavType.StringType },
-                navArgument("fotoUri") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = ""
+                navArgument("userId") {
+                    type = NavType.IntType
+                    defaultValue = 0  // jangan pakai nullable
                 }
             )
         ) { backStackEntry ->
-            val nama = backStackEntry.arguments?.getString("nama") ?: "User"
-            val tanggalStr = backStackEntry.arguments?.getString("tanggal") ?: LocalDate.now().toString()
-            val tanggal = LocalDate.parse(tanggalStr)
-            val fotoUri = backStackEntry.arguments?.getString("fotoUri")
+            val tanggal = backStackEntry.arguments?.getString("tanggal") ?: LocalDate.now().toString()
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
 
             DetailPiketSayaScreen(
                 navController = navController,
-                nama = nama,
                 tanggal = tanggal,
-                fotoUri = if (fotoUri.isNullOrEmpty()) null else fotoUri
+                userId = userId
             )
         }
+
 
         // ========================
         // GANTI PIKET
         // ========================
         composable(
-            route = Screen.GantiPiket.route,
+            route = "ganti_piket_screen/{nama}/{piketId}/{tanggal}",
             arguments = listOf(
                 navArgument("nama") { type = NavType.StringType },
+                navArgument("piketId") { type = NavType.IntType },
                 navArgument("tanggal") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val nama = backStackEntry.arguments?.getString("nama") ?: "User"
-            val tanggalStr =
-                backStackEntry.arguments?.getString("tanggal") ?: LocalDate.now().toString()
-            val tanggal = LocalDate.parse(tanggalStr)
+            val nama = Uri.decode(backStackEntry.arguments?.getString("nama") ?: "User")
+            val piketId = backStackEntry.arguments?.getInt("piketId") ?: 0
+            val tanggalStr = Uri.decode(backStackEntry.arguments?.getString("tanggal") ?: "")
+            val tanggal = try { LocalDate.parse(tanggalStr) } catch (_: Exception) { LocalDate.now() }
 
-            GantiPiketScreen(
+            GantiPiketCalendarScreen(
                 navController = navController,
-                nama = nama,
-                tanggal = tanggal
+                slotId = piketId,
+                tanggalLama = tanggal
             )
         }
 
+
+
+
         // ========================
-        // Ambil Slot, Report, Payment (no args)
+        // Report, Payment (no args)
         // ========================
-        composable(route = Screen.AmbilSlot.route) {
-            AmbilSlotScreen(onBackClick = { navController.popBackStack() })
-        }
+
 
         composable(route = Screen.Report.route) {
             ReportScreen(navController, userName = null)
         }
 
-        composable(route = Screen.Payment.route) {
-            PaymentScreen(navController = navController)
-        }
-
-        // ========================
-        // PEMBAYARAN - daftar_tagihan, konfirmasi, status, riwayat...
-        // ========================
-        composable("daftar_tagihan") {
-            PaymentModuleScreen(navController, daftarTagihan)
-        }
-
-        composable("konfirmasi_pembayaran") {
-            KonfirmasiPembayaranScreen(
-                navController = navController,
-                onBackClick = { navController.popBackStack() },
-                onSubmitClick = { _, _, _, _, _ -> },
-                onCancelClick = { navController.popBackStack() }
+        // ============================
+        // MODUL PEMBAYARAN
+        // ============================
+        composable(Screen.Payment.route) {
+            val vm: PaymentViewModel = viewModel(
+                factory = PaymentViewModelFactory(RetrofitClient.instance)
             )
+            PaymentModuleScreen(navController, vm)
         }
 
+        // ============================
+        // KONFIRMASI PEMBAYARAN
+        // ============================
         composable(
-            route = "konfirmasi_pembayaran/{bulan}/{nama}/{noKamar}/{totalTagihan}",
+            route = "konfirmasi_pembayaran/{bulan}/{total}",
             arguments = listOf(
                 navArgument("bulan") { type = NavType.StringType },
-                navArgument("nama") { type = NavType.StringType },
-                navArgument("noKamar") { type = NavType.StringType },
-                navArgument("totalTagihan") { type = NavType.StringType }
+                navArgument("total") { type = NavType.IntType }
             )
         ) { backStackEntry ->
-            val context = LocalContext.current
-            val bulan = backStackEntry.arguments?.getString("bulan") ?: ""
-            val nama = backStackEntry.arguments?.getString("nama") ?: ""
-            val noKamar = backStackEntry.arguments?.getString("noKamar") ?: ""
-            val totalTagihan = backStackEntry.arguments?.getString("totalTagihan") ?: ""
+
+            val bulan = backStackEntry.arguments!!.getString("bulan")!!
+            val total = backStackEntry.arguments!!.getInt("total")
+
+            val vm: PaymentViewModel = viewModel(
+                factory = PaymentViewModelFactory(RetrofitClient.instance)
+            )
 
             KonfirmasiPembayaranScreen(
                 navController = navController,
+                viewModel = vm,
                 bulan = bulan,
-                nama = nama,
-                noKamar = noKamar,
-                totalTagihan = totalTagihan,
-                onBackClick = { navController.popBackStack() },
-                onSubmitClick = { namaInput, bulanInput, noKamarInput, totalInput, buktiUri ->
-                    if (
-                        namaInput.isBlank() || bulanInput.isBlank() ||
-                        noKamarInput.isBlank() || totalInput.isBlank() || buktiUri == null
-                    ) {
-                        Toast.makeText(
-                            context,
-                            "Harap isi semua data terlebih dahulu!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        Toast.makeText(
-                            context,
-                            "Pembayaran berhasil!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        if (riwayatPembayaranList.none { it.bulan == bulanInput }) {
-                            riwayatPembayaranList.add(
-                                PembayaranData(
-                                    nama = namaInput,
-                                    bulan = bulanInput,
-                                    noKamar = noKamarInput,
-                                    totalTagihan = totalInput,
-                                    status = "Lunas",
-                                    buktiUri = buktiUri.toString()
-                                )
-                            )
-                            daftarTagihan.remove(bulanInput)
-                            if (!statusLunasList.contains(bulanInput)) {
-                                statusLunasList.add(bulanInput)
-                            }
-                        }
-
-                        navController.navigate("riwayat_pembayaran")
-                    }
-                },
-                onCancelClick = { navController.popBackStack() }
+                total = total
             )
         }
 
+        // ============================
+        // STATUS PEMBAYARAN
+        // ============================
         composable("status_pembayaran") {
-            val dataStatus = listOf("Oktober", "November", "Desember").map { bulanItem ->
-                Triple(
-                    bulanItem,
-                    "500000",
-                    if (statusLunasList.contains(bulanItem)) "Lunas" else "Belum Lunas"
-                )
-            }
+
+            val vm: PaymentViewModel = viewModel(
+                factory = PaymentViewModelFactory(RetrofitClient.instance)
+            )
 
             StatusPembayaranScreen(
                 navController = navController,
-                riwayatList = dataStatus
+                viewModel = vm
             )
         }
 
+// RIWAYAT PEMBAYARAN (FIX FINAL)
+// ============================
         composable("riwayat_pembayaran") {
+
+            val vm: PaymentViewModel = viewModel(
+                factory = PaymentViewModelFactory(RetrofitClient.instance)
+            )
+
             RiwayatPembayaranScreen(
                 navController = navController,
-                onBackClick = { navController.popBackStack() },
-                riwayatList = riwayatPembayaranList,
-                onDetailClick = { index ->
-                    navController.navigate("detail_pembayaran/$index")
+                viewModel = vm,
+                onDetailClick = { id ->
+                    navController.navigate("detail_pembayaran/$id")
                 },
-                onDeleteItem = { index ->
-                    riwayatPembayaranList.removeAt(index)
+                onDeleteItem = { paymentId ->
+
+                    val userId = com.example.asramaku.data.session.UserSession.userId
+                    if (userId != null) {
+                        vm.deletePayment(paymentId, userId) // ✅ LANGSUNG ID DATABASE
+                    }
                 }
             )
         }
 
+        // ============================
+// DETAIL PEMBAYARAN (FIX FINAL)
+// ============================
         composable(
-            route = "detail_pembayaran/{index}",
-            arguments = listOf(navArgument("index") { type = NavType.IntType })
+            route = "detail_pembayaran/{paymentId}",
+            arguments = listOf(
+                navArgument("paymentId") { type = NavType.IntType }
+            )
         ) { backStackEntry ->
-            val index = backStackEntry.arguments?.getInt("index") ?: -1
-            val pembayaran = riwayatPembayaranList.getOrNull(index)
-            if (pembayaran != null) {
-                DetailPembayaranScreen(
-                    pembayaran = pembayaran,
-                    onBackClick = { navController.popBackStack() }
-                )
-            } else {
-                Text("Data tidak ditemukan")
-            }
+
+            val paymentId = backStackEntry.arguments!!.getInt("paymentId")
+
+            val vm: PaymentViewModel = viewModel(
+                factory = PaymentViewModelFactory(RetrofitClient.instance)
+            )
+
+            DetailPembayaranScreen(
+                paymentId = paymentId,
+                viewModel = vm,
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         // ========================

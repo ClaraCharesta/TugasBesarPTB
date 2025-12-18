@@ -8,12 +8,18 @@
     <!-- Permission -->
     <uses-permission android:name="android.permission.CAMERA"
         tools:ignore="PermissionImpliesUnsupportedChromeOsHardware" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+
 
     <application
+
+        android:networkSecurityConfig="@xml/network_security_config"
+
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -23,6 +29,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AsramaKu"
         android:usesCleartextTraffic="true">
+
+
 
         <!-- Main Activity -->
         <activity
@@ -47,6 +55,8 @@
                 android:resource="@xml/file_paths" />
 
         </provider>
+
+
 
     </application>
 </manifest>

@@ -141,7 +141,11 @@ fun DutyModuleScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = { navController.navigate(Screen.RekapPiket.route) },
+                    onClick = {
+                        navController.navigate(
+                            "rekap_piket_screen/$userId/${Uri.encode(namaUser)}"
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(55.dp),
@@ -155,6 +159,8 @@ fun DutyModuleScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+
+
             }
         }
     }

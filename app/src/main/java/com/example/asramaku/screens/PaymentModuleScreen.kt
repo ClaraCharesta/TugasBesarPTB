@@ -1,90 +1,146 @@
-package com.example.asramaku.screens
+package com.example.asramaku.pembayaran
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.asramaku.component.TagihanCard
-import com.example.asramaku.pembayaran.PaymentTabMenu
-import com.example.asramaku.navigation.Screen // <-- import tambahan untuk membuat route Home
+import com.example.asramaku.data.model.Payment
+import com.example.asramaku.data.session.UserSession
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentModuleScreen(
     navController: NavController,
-    daftarTagihan: List<String> // 🟢 tambahan agar data bisa direaktifkan
+    viewModel: PaymentViewModel
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Lihat Tagihan Pembayaran") },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            // Navigasi khusus: kembali ke HomeScreen dengan userName default "User"
-                            // Gunakan Screen.Home.createRoute(...) agar konsisten dengan NavGraph
-                            navController.navigate(Screen.Home.createRoute("User")) {
-                                // Hindari menumpuk banyak instance Home pada back stack
-                                popUpTo(Screen.Home.createRoute("User")) {
-                                    inclusive = false
-                                }
-                                // opsional: singleTop supaya tidak menambah entry bila sudah di home
-                                launchSingleTop = true
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFAED6D3),
-                    titleContentColor = Color.Black
-                )
-            )
-        },
 
-        bottomBar = {
-            // bottom bar hanya dipasang bila navController tersedia (di sini selalu ada)
-            PaymentTabMenu(
-                currentRoute = "daftar_tagihan",
-                navController = navController
+    val tagihanList by viewModel.tagihanList.collectAsState()
+
+    // ✅ AMBIL userId DARI SESSION (BUKAN HARDCODE)
+    val userId = UserSession.userId
+
+    LaunchedEffect(userId) {
+        userId?.let {
+            viewModel.loadTagihan(it)
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFFFF0D5))
+    ) {
+
+        // =========================
+        // TOP BAR (PANAH BACK)
+        // =========================
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFA7D7C5))
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back"
+                )
+            }
+
+            Text(
+                text = "Lihat Tagihan Pembayaran",
+                style = MaterialTheme.typography.headlineSmall
             )
         }
-    ) { innerPadding ->
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // =========================
+        // LIST TAGIHAN
+        // =========================
         Column(
             modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .background(Color(0xFFFFF0D5))
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 16.dp)
+                .weight(1f)
         ) {
-            val nama = "Asyifa"
-            val noKamar = "A203"
-            val totalTagihan = "500000"
 
-            // 🟢 Sekarang daftarTagihan berasal dari parameter
-            if (daftarTagihan.isEmpty()) {
-                Text("Semua tagihan sudah lunas 🎉", color = Color.DarkGray)
+            if (tagihanList.isEmpty()) {
+                Text("Tidak ada tagihan.")
             } else {
-                daftarTagihan.forEach { bulan ->
-                    TagihanCard(
-                        bulan = bulan,
-                        nama = nama,
-                        noKamar = noKamar,
-                        totalTagihan = "Rp.$totalTagihan",
-                        onBayarClick = {
-                            navController.navigate(
-                                "konfirmasi_pembayaran/${bulan}/${nama}/${noKamar}/${totalTagihan}"
-                            )
-                        }
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(tagihanList) { item ->
+                        TagihanCard(
+                            payment = item,
+                            onBayarClick = {
+                                navController.navigate(
+                                    "konfirmasi_pembayaran/${item.bulan}/${item.totalTagihan}"
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        // =========================
+        // BOTTOM NAVIGATION
+        // =========================
+        BottomNavigationBar(navController)
+    }
+}
+
+@Composable
+fun TagihanCard(
+    payment: Payment,
+    onBayarClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(Color(0xFFCFE8D5)),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            Text(
+                text = "Bulan tagihan : ${payment.bulan}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Text(
+                text = "Total Tagihan : Rp.${payment.totalTagihan}"
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+
+                // ✅ LOGIKA LAMA TETAP AMAN
+                val isDisabled = payment.buktiBayar != null
+
+                Button(
+                    onClick = onBayarClick,
+                    enabled = !isDisabled
+                ) {
+                    Text(
+                        if (isDisabled) "Menunggu Konfirmasi"
+                        else "Bayar Sekarang"
                     )
                 }
             }
@@ -92,9 +148,31 @@ fun PaymentModuleScreen(
     }
 }
 
-// biar kompatibel dengan navGraph lama
 @Composable
-fun PaymentScreen(navController: NavController) {
-    // Hanya navigate ke daftar_tagihan supaya memakai state dari NavGraph.
-    navController.navigate("daftar_tagihan")
+fun BottomNavigationBar(navController: NavController) {
+    NavigationBar(
+        containerColor = Color(0xFFF3E6F7)
+    ) {
+
+        NavigationBarItem(
+            selected = true,
+            onClick = { },
+            icon = { Icon(Icons.Default.List, contentDescription = "Tagihan") },
+            label = { Text("Tagihan") }
+        )
+
+        NavigationBarItem(
+            selected = false,
+            onClick = { navController.navigate("status_pembayaran") },
+            icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Status") },
+            label = { Text("Status") }
+        )
+
+        NavigationBarItem(
+            selected = false,
+            onClick = { navController.navigate("riwayat_pembayaran") },
+            icon = { Icon(Icons.Default.History, contentDescription = "Riwayat") },
+            label = { Text("Riwayat") }
+        )
+    }
 }

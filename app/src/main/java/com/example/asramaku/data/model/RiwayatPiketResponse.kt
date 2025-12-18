@@ -1,10 +1,9 @@
 package com.example.asramaku.data.model
 
-data class PiketResponse(
+data class RiwayatPiketResponse(
     val id: Int,
     val userId: Int,
+    val jadwalPiketId: Int,
     val tanggal: String,
-    val isDone: Boolean,
-    val foto: String?,
-    val status: String
+    val foto: String?
 )

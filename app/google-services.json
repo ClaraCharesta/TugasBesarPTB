@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "954173957832",
+    "project_id": "asramaku-d84c7",
+    "storage_bucket": "asramaku-d84c7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:954173957832:android:be38a6adc1c03c4d34e7fd",
+        "android_client_info": {
+          "package_name": "com.example.asramaku"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDaNxBLf0N39XdNQm_sjd_edfRFQQS8188"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -5,10 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,19 +16,35 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.asramaku.component.StatusPembayaranRow
+import com.example.asramaku.data.session.UserSession
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatusPembayaranScreen(
-    navController: NavController? = null,
-    riwayatList: List<Triple<String, String, String>> = emptyList()
+    navController: NavController,
+    viewModel: PaymentViewModel
 ) {
+
+    // =========================
+    // 🔥 USER LOGIN
+    // =========================
+    val userId = UserSession.userId
+
+    // =========================
+    // 🔥 DATA DARI API
+    // =========================
+    val statusList by viewModel.statusList.collectAsState()
+
+    LaunchedEffect(userId) {
+        userId?.let {
+            viewModel.loadAllStatus(it)
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
 
-        // ===== KONTEN LAMA (UTUH) =====
         Box(modifier = Modifier.weight(1f)) {
             Scaffold(
                 topBar = {
@@ -51,12 +65,17 @@ fun StatusPembayaranScreen(
                 },
                 containerColor = Color(0xFFFFF0D5)
             ) { innerPadding ->
+
                 Column(
                     modifier = Modifier
                         .padding(innerPadding)
                         .fillMaxSize()
                         .padding(16.dp)
                 ) {
+
+                    // =========================
+                    // HEADER TABEL (TIDAK DIUBAH)
+                    // =========================
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -69,41 +88,41 @@ fun StatusPembayaranScreen(
                         TableHeaderCell("Status Pembayaran", 0.4f)
                     }
 
-                    val dataPembayaran = if (riwayatList.isNotEmpty()) {
-                        riwayatList.mapIndexed { index, triple ->
-                            Triple(index + 1, triple.first, triple.third)
-                        }
-                    } else {
-                        listOf(
-                            Triple(1, "Oktober", "Lunas"),
-                            Triple(2, "November", "Lunas"),
-                            Triple(3, "Desember", "Belum Lunas")
-                        )
-                    }
-
+                    // =========================
+                    // DATA REAL DARI DATABASE
+                    // =========================
                     LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        itemsIndexed(dataPembayaran) { _, (no, bulan, status) ->
-                            StatusPembayaranRow(no, bulan, status)
+                        itemsIndexed(statusList) { index, item ->
+                            StatusPembayaranRow(
+                                no = index + 1,
+                                bulan = item.bulan,
+                                status = item.status
+                            )
                         }
                     }
                 }
             }
         }
 
-        // ===== TAB MENU PEMBAYARAN (BARU) =====
+        // =========================
+        // TAB MENU (TIDAK DIUBAH)
+        // =========================
         PaymentTabMenu(
             currentRoute = "status_pembayaran",
-            navController = navController!!
+            navController = navController
         )
     }
 }
 
+// =========================
+// HEADER CELL (UTUH)
+// =========================
 @Composable
 fun RowScope.TableHeaderCell(text: String, weight: Float) {
     Box(
         modifier = Modifier
             .weight(weight)
-            .background(Color((0xFFD9E1D0)))
+            .background(Color(0xFFD9E1D0))
             .border(1.dp, Color.Black)
             .height(IntrinsicSize.Min),
         contentAlignment = Alignment.Center

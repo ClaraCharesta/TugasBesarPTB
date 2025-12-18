@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,35 +26,51 @@ fun PaymentTabMenu(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFF3E8FF)) // ungu muda seperti gambar
+            .background(Color(0xFFF3E8FF))
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
 
+        // ===========================
+        //     TAB: TAGIHAN
+        // ===========================
         PaymentTabItem(
             label = "Tagihan",
             icon = Icons.Default.List,
-            selected = currentRoute == "daftar_tagihan",
-        ) { navController.navigate("daftar_tagihan") }
+            selected = currentRoute == "payment_screen"
+        ) {
+            navController.navigate("payment_screen") {
+                popUpTo("payment_screen") { inclusive = true }
+                launchSingleTop = true
+            }
+        }
 
-        PaymentTabItem(
-            label = "Konfirmasi",
-            icon = Icons.Default.Money,
-            selected = currentRoute.startsWith("konfirmasi_pembayaran"),
-        ) { navController.navigate("konfirmasi_pembayaran") }
-
+        // ===========================
+        //   TAB: STATUS PEMBAYARAN
+        // ===========================
         PaymentTabItem(
             label = "Status",
             icon = Icons.Default.CheckCircle,
-            selected = currentRoute == "status_pembayaran",
-        ) { navController.navigate("status_pembayaran") }
+            selected = currentRoute == "status_pembayaran"
+        ) {
+            navController.navigate("status_pembayaran") {
+                launchSingleTop = true
+            }
+        }
 
+        // ===========================
+        //      TAB: RIWAYAT
+        // ===========================
         PaymentTabItem(
             label = "Riwayat",
             icon = Icons.Default.History,
-            selected = currentRoute == "riwayat_pembayaran",
-        ) { navController.navigate("riwayat_pembayaran") }
+            selected = currentRoute == "riwayat_pembayaran"
+        ) {
+            navController.navigate("riwayat_pembayaran") {
+                launchSingleTop = true
+            }
+        }
     }
 }
 
@@ -68,6 +87,7 @@ fun PaymentTabItem(
             .padding(horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Box(
             modifier = Modifier
                 .background(

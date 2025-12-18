@@ -33,6 +33,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.InputStream
 import java.time.LocalDate
@@ -44,56 +47,115 @@ import java.util.*
 @Composable
 fun BelumDikerjakanScreen(
     navController: NavController,
+    userId: Int,
+    jadwalId: Int,
     nama: String,
-    tanggal: LocalDate,
-    onSelesai: (LocalDate) -> Unit
+    tanggal: LocalDate
 ) {
+
+    // ===================== WARNA =====================
     val backgroundColor = Color(0xFFFFE7C2)
     val cardColor = Color(0xFF9DBEBB)
     val buttonColor = Color(0xFF325B5C)
+
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var imageFile by remember { mutableStateOf<File?>(null) }
     var bitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
 
-    // Launcher untuk ambil foto
+    // ===================== AMBIL FOTO =====================
     val takePhotoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
+        ActivityResultContracts.TakePicture()
     ) { success ->
         if (success && photoUri != null) {
-            // Load bitmap dari URI
-            val inputStream: InputStream? = context.contentResolver.openInputStream(photoUri!!)
-            bitmap = BitmapFactory.decodeStream(inputStream)?.asImageBitmap()
-            inputStream?.close()
+            val stream: InputStream? =
+                context.contentResolver.openInputStream(photoUri!!)
+            bitmap = BitmapFactory.decodeStream(stream)?.asImageBitmap()
+            stream?.close()
 
-            coroutineScope.launch {
+            scope.launch {
                 snackbarHostState.showSnackbar("Foto berhasil diambil")
             }
         }
     }
 
-    // Launcher untuk permission kamera
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            val file = photoFile(context)
+            val file = createImageFile(context)
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.provider",
                 file
             )
+            imageFile = file
             photoUri = uri
             takePhotoLauncher.launch(uri)
         } else {
-            coroutineScope.launch {
+            scope.launch {
                 snackbarHostState.showSnackbar("Izin kamera ditolak")
             }
         }
     }
 
+    // ===================== UPLOAD KE BACKEND =====================
+    fun uploadToBackend() {
+        if (imageFile == null) {
+            scope.launch {
+                snackbarHostState.showSnackbar("Foto belum diambil!")
+            }
+            return
+        }
+
+        val client = OkHttpClient()
+
+        val fileBody =
+            imageFile!!.asRequestBody("image/jpeg".toMediaType())
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("jadwalId", jadwalId.toString())
+            .addFormDataPart("userId", userId.toString()) // 🔥 WAJIB INI
+            .addFormDataPart(
+                "foto",
+                imageFile!!.name,
+                fileBody
+            )
+            .build()
+
+
+        val request = Request.Builder()
+            .url("http://10.0.2.2:3000/api/piket/selesai")
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: java.io.IOException) {
+                scope.launch {
+                    snackbarHostState.showSnackbar("Gagal terhubung ke server")
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                scope.launch {
+                    if (response.isSuccessful) {
+                        snackbarHostState.showSnackbar("Piket berhasil diselesaikan")
+                        navController.popBackStack()
+                    } else {
+                        snackbarHostState.showSnackbar(
+                            "Upload gagal (${response.code})"
+                        )
+                    }
+                }
+            }
+        })
+    }
+
+    // ===================== UI =====================
     Scaffold(
         topBar = {
             TopAppBar(
@@ -102,32 +164,32 @@ fun BelumDikerjakanScreen(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Belum Dikerjakan",
-                            fontSize = 22.sp,
-                            color = Color.Black
-                        )
+                        Text("Belum Dikerjakan", fontSize = 22.sp)
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        navController.popBackStack()
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = backgroundColor
+                )
             )
         },
-        containerColor = backgroundColor,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-    ) { innerPadding ->
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = backgroundColor
+    ) { padding ->
+
         Column(
             modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(16.dp),
+                .padding(padding)
+                .padding(16.dp)
+                .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
 
             Column(
                 modifier = Modifier
@@ -137,16 +199,20 @@ fun BelumDikerjakanScreen(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Nama : $nama", color = Color.White, fontSize = 18.sp)
+
+                Text("Nama : $nama", color = Color.White, fontSize = 18.sp)
                 Text(
-                    text = "Tanggal : ${tanggal.format(DateTimeFormatter.ofPattern("dd - MM - yyyy"))}",
+                    "Tanggal : ${
+                        tanggal.format(
+                            DateTimeFormatter.ofPattern("dd - MM - yyyy")
+                        )
+                    }",
                     color = Color.White,
                     fontSize = 16.sp
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Placeholder foto dengan animasi
                 Box(
                     modifier = Modifier
                         .size(250.dp)
@@ -157,57 +223,50 @@ fun BelumDikerjakanScreen(
                     if (bitmap != null) {
                         this@Column.AnimatedVisibility(
                             visible = true,
-                            enter = fadeIn(animationSpec = tween(600)) + scaleIn(animationSpec = tween(600))
+                            enter = fadeIn(tween(600)) + scaleIn(tween(600))
                         ) {
                             Image(
                                 bitmap = bitmap!!,
                                 contentDescription = "Foto Piket",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(20.dp))
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
                     } else {
-                        Text(text = "Foto belum ada", color = Color.White)
+                        Text("Foto belum ada", color = Color.White)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
+                    onClick = {
+                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Ambil Foto", color = Color.White, fontSize = 16.sp)
+                    Text("Ambil Foto", color = Color.White)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = {
-                        onSelesai(tanggal)
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Piket telah selesai")
-                        }
-                        navController.popBackStack()
-                    },
+                    onClick = { uploadToBackend() },
                     colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Tandai Selesai", color = Color.White, fontSize = 16.sp)
+                    Text("Tandai Selesai", color = Color.White)
                 }
             }
         }
     }
 }
 
-// Helper buat file sementara foto
-fun photoFile(context: Context): File {
-    val dir = context.cacheDir
+// ===================== CREATE FILE =====================
+fun createImageFile(context: Context): File {
     return File.createTempFile(
         "piket_${UUID.randomUUID()}",
         ".jpg",
-        dir
+        context.cacheDir
     )
 }

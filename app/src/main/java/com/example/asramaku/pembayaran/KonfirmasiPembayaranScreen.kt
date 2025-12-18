@@ -8,216 +8,301 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.core.content.FileProvider
-import coil.compose.rememberAsyncImagePainter
-import com.example.asramaku.component.RekeningCard
-import com.example.asramaku.R
-import java.io.File
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
+import com.example.asramaku.R
+import com.example.asramaku.component.RekeningCard
+import com.example.asramaku.data.session.UserSession
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KonfirmasiPembayaranScreen(
-    bulan: String = "",
-    nama: String = "",
-    noKamar: String = "",
-    totalTagihan: String = "",
-    onBackClick: () -> Unit = {},
-    onSubmitClick: (String, String, String, String, Uri?) -> Unit = { _, _, _, _, _ -> },
-    onCancelClick: () -> Unit = {},
-    navigateToRiwayat: () -> Unit = {},
-    navController: NavController? = null  // 🟢 hanya ditambahkan ini
+    navController: NavController,
+    viewModel: PaymentViewModel,
+    bulan: String,
+    total: Int
 ) {
-    var inputNama by remember { mutableStateOf(nama) }
-    var inputBulan by remember { mutableStateOf(bulan) }
-    var inputNoKamar by remember { mutableStateOf(noKamar) }
-    var inputTotalTagihan by remember { mutableStateOf(totalTagihan) }
-
-    var showDialog by remember { mutableStateOf(false) }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-
     val context = LocalContext.current
+    val userId = UserSession.userId   // dari session
+
+    // ================= STATE =================
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+    var showSuccessPopup by remember { mutableStateOf(false) }
+
     val scrollState = rememberScrollState()
+
+    val isLoading by viewModel.isLoading.collectAsState()
+    val successMsg by viewModel.successMessage.collectAsState()
+    val errorMsg by viewModel.errorMessage.collectAsState()
+
+    // ================= GALERI =================
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) selectedImageUri = uri
+    }
+
+    // ================= KAMERA =================
     val tempCameraUri = remember { mutableStateOf<Uri?>(null) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success -> if (success) selectedImageUri = tempCameraUri.value }
-
-    val pickImageLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri -> uri?.let { selectedImageUri = it } }
-
-    fun createImageUri(context: Context): Uri {
-        val imageFile = File(context.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
-        return FileProvider.getUriForFile(context, "${context.packageName}.provider", imageFile)
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) selectedImageUri = tempCameraUri.value
     }
 
-    // 🟣 -------------- HANYA TAMBAH SCAFFOLD + bottomBar di sini ----------------
-    Scaffold(
-        bottomBar = {
-            navController?.let {
-                PaymentTabMenu(
-                    currentRoute = "konfirmasi_pembayaran",
-                    navController = it
-                )
-            }
+    fun createImageUri(context: Context): Uri {
+        val imageFile = File(
+            context.cacheDir,
+            "bukti_bayar_${System.currentTimeMillis()}.jpg"
+        )
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            imageFile
+        )
+    }
+
+    LaunchedEffect(successMsg) {
+        if (successMsg.isNotEmpty()) {
+            showSuccessPopup = true
         }
-    ) { innerPadding ->
-        // -------------------- KODE ASLI TIDAK DIUBAH 1 BARIS PUN --------------------
+    }
+
+    // ================= UI =================
+    Scaffold(
+        bottomBar = { PaymentBottomBarKonfirmasi(navController) }
+    ) { padding ->
+
         Column(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(padding)
                 .fillMaxSize()
                 .background(Color(0xFFFFF0D5))
         ) {
+
+            // ---------- TOP BAR ----------
             TopAppBar(
                 title = { Text("Lakukan Pembayaran") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFAED6D3))
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFFAED6D3)
+                )
             )
 
+            // ---------- CONTENT ----------
             Column(
                 modifier = Modifier
                     .padding(16.dp)
-                    .verticalScroll(scrollState)
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OutlinedTextField(
-                    value = inputNama,
-                    onValueChange = { inputNama = it },
-                    label = { Text("Nama") },
-                    modifier = Modifier.fillMaxWidth()
-                )
 
                 OutlinedTextField(
-                    value = inputBulan,
-                    onValueChange = { inputBulan = it },
+                    value = bulan,
+                    onValueChange = {},
                     label = { Text("Tagihan Bulan") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = false
                 )
 
                 OutlinedTextField(
-                    value = inputNoKamar,
-                    onValueChange = { inputNoKamar = it },
-                    label = { Text("No. Kamar") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = inputTotalTagihan,
-                    onValueChange = { inputTotalTagihan = it },
+                    value = total.toString(),
+                    onValueChange = {},
                     label = { Text("Total Tagihan") },
-                    keyboardOptions = KeyboardOptions.Default,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = false
                 )
 
                 Text("Metode Pembayaran", style = MaterialTheme.typography.titleMedium)
-                RekeningCard(bank = "BCA", nomor = "70055792666", nama = "Asrama", logo = R.drawable.ic_bca)
-                RekeningCard(bank = "BNI", nomor = "18005579266", nama = "Asrama", logo = R.drawable.ic_bni)
+
+                RekeningCard("BCA", "70055792666", "Asrama", R.drawable.ic_bca)
+                RekeningCard("BNI", "18005579266", "Asrama", R.drawable.ic_bni)
 
                 Text("Upload Bukti Pembayaran", style = MaterialTheme.typography.titleMedium)
+
                 OutlinedButton(
                     onClick = { showDialog = true },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = successMsg.isEmpty()
                 ) {
                     Icon(Icons.Default.PhotoCamera, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text("Pilih Foto / Kamera")
                 }
 
+                // PREVIEW GAMBAR
                 selectedImageUri?.let {
                     Image(
                         painter = rememberAsyncImagePainter(it),
                         contentDescription = "Bukti Pembayaran",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp)
-                            .padding(top = 8.dp),
+                            .height(220.dp),
                         contentScale = ContentScale.Crop
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
 
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+
+                    // ================= KIRIM =================
                     Button(
                         onClick = {
-                            if (inputNama.isNotBlank() && inputBulan.isNotBlank() &&
-                                inputNoKamar.isNotBlank() && inputTotalTagihan.isNotBlank() &&
-                                selectedImageUri != null
-                            ) {
-                                onSubmitClick(
-                                    inputNama,
-                                    inputBulan,
-                                    inputNoKamar,
-                                    inputTotalTagihan,
-                                    selectedImageUri
+                            if (userId != null) {
+                                viewModel.submitPayment(
+                                    context = context,          // 🔥 WAJIB
+                                    userId = userId,
+                                    bulan = bulan,
+                                    totalTagihan = total,
+                                    buktiBayarUri = selectedImageUri
                                 )
-                                navigateToRiwayat()
-                            } else {
-                                println("⚠️ Harap isi semua data terlebih dahulu!")
                             }
                         },
+                        enabled = selectedImageUri != null &&
+                                !isLoading &&
+                                successMsg.isEmpty(),
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E6664))
-                    ) { Text("Kirim") }
+                        colors = ButtonDefaults.buttonColors(Color(0xFF2E6664))
+                    ) {
+                        Text("Kirim", color = Color.White)
+                    }
 
                     Button(
-                        onClick = onCancelClick,
+                        onClick = { navController.popBackStack() },
+                        enabled = successMsg.isEmpty(),
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E6664))
-                    ) { Text("Batal") }
+                        colors = ButtonDefaults.buttonColors(Color(0xFF2E6664))
+                    ) {
+                        Text("Batal", color = Color.White)
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(60.dp))
+                if (isLoading) {
+                    CircularProgressIndicator()
+                }
+
+                if (errorMsg.isNotEmpty()) {
+                    Text(errorMsg, color = Color.Red)
+                }
+
+                Spacer(Modifier.height(70.dp))
             }
         }
-        // -------------------------------------------------------------------------
     }
 
-    if (showDialog) {
-        Dialog(onDismissRequest = { showDialog = false }) {
-            Surface(shape = MaterialTheme.shapes.medium, color = Color.White) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Pilih Metode Upload", style = MaterialTheme.typography.titleMedium)
+    // ================= DIALOG PILIH SUMBER =================
+    if (showDialog && successMsg.isEmpty()) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Pilih Metode Upload") },
+            text = {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Button(
                         onClick = {
-                            showDialog = false
                             pickImageLauncher.launch("image/*")
+                            showDialog = false
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("📁 Pilih Foto") }
+                    ) {
+                        Text("📁 Pilih dari Galeri")
+                    }
 
                     Button(
                         onClick = {
+                            val uri = createImageUri(context)
+                            tempCameraUri.value = uri
+                            cameraLauncher.launch(uri)
                             showDialog = false
-                            val newUri = createImageUri(context)
-                            tempCameraUri.value = newUri
-                            cameraLauncher.launch(newUri)
                         },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("📸 Ambil Foto") }
+                    ) {
+                        Text("📷 Ambil Foto Kamera")
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    // ================= SUCCESS =================
+    if (showSuccessPopup) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Berhasil!") },
+            text = { Text("Bukti pembayaran berhasil dikirim.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showSuccessPopup = false
+                        navController.navigate("payment_screen") {
+                            popUpTo("payment_screen") { inclusive = true }
+                        }
+                    }
+                ) {
+                    Text("OK")
                 }
             }
-        }
+        )
+    }
+}
+
+// ================= BOTTOM BAR =================
+@Composable
+fun PaymentBottomBarKonfirmasi(navController: NavController) {
+    NavigationBar(containerColor = Color(0xFFF3E6F7)) {
+
+        NavigationBarItem(
+            selected = false,
+            onClick = { navController.navigate("payment_screen") },
+            icon = { Icon(Icons.Default.List, contentDescription = null) },
+            label = { Text("Tagihan") }
+        )
+
+        NavigationBarItem(
+            selected = true,
+            onClick = {},
+            icon = { Icon(Icons.Default.PhotoCamera, contentDescription = null) },
+            label = { Text("Konfirmasi") }
+        )
+
+        NavigationBarItem(
+            selected = false,
+            onClick = { navController.navigate("status_pembayaran") },
+            icon = { Icon(Icons.Default.CheckCircle, contentDescription = null) },
+            label = { Text("Status") }
+        )
+
+        NavigationBarItem(
+            selected = false,
+            onClick = { navController.navigate("riwayat_pembayaran") },
+            icon = { Icon(Icons.Default.History, contentDescription = null) },
+            label = { Text("Riwayat") }
+        )
     }
 }

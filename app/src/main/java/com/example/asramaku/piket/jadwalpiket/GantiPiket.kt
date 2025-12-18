@@ -5,163 +5,212 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.asramaku.model.DummyData
+import com.example.asramaku.data.local.TokenManager
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.net.HttpURLConnection
+import java.net.URL
 
+// ========================
+// UPDATE TANGGAL PIKET
+// ========================
+suspend fun updateTanggalPiket(slotId: Int, userId: Int, newTanggal: String): Boolean {
+    return withContext(Dispatchers.IO) {
+        try {
+            val url = URL("http://10.0.2.2:3000/api/piket/update-tanggal")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "PUT"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.doOutput = true
+
+            val body = """{"piketId":$slotId,"newTanggal":"$newTanggal"}"""
+            conn.outputStream.use { it.write(body.toByteArray()) }
+
+            conn.responseCode == 200
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+}
+
+// ========================
+// CALENDAR SCREEN KEREN
+// ========================
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GantiPiketScreen(
+fun GantiPiketCalendarScreen(
     navController: NavController,
-    nama: String = "-",
-    tanggal: java.time.LocalDate = java.time.LocalDate.now()
+    slotId: Int,
+    tanggalLama: LocalDate
 ) {
+    val context = LocalContext.current
+    val tokenManager = remember { TokenManager(context) }
+    val savedUserId by tokenManager.userId.collectAsState(initial = 0)
+
     val backgroundColor = Color(0xFFFFE7C2)
     val cardColor = Color(0xFF9DBEBB)
     val buttonColor = Color(0xFF325B5C)
-    val searchBg = Color(0xFFECECEC)
+    val selectedColor = Color(0xFFFC9E4F)
+    val todayColor = Color(0xFF9DBEBB)
+    val formatter = DateTimeFormatter.ofPattern("dd - MM - yyyy")
 
-    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+    var selectedDate by remember { mutableStateOf(tanggalLama) }
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    val daftarSlot = DummyData.slotPiketList
+    val currentMonth = remember { mutableStateOf(YearMonth.now()) }
 
-    val filteredSlot = daftarSlot.filter {
-        it.tanggal.contains(searchQuery.text, ignoreCase = true)
+    // Generate tanggal-tanggal di bulan ini
+    fun generateCalendarDates(month: YearMonth): List<LocalDate> {
+        val firstDay = month.atDay(1)
+        val lastDay = month.atEndOfMonth()
+        val totalDays = firstDay.dayOfWeek.value % 7 // shift awal minggu
+        val days = mutableListOf<LocalDate>()
+
+        // Kosongkan cell sebelum tanggal 1
+        repeat(totalDays) { days.add(LocalDate.MIN) }
+
+        for (day in 1..month.lengthOfMonth()) {
+            days.add(month.atDay(day))
+        }
+        return days
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "Ganti Jadwal Piket",
-                            fontSize = 20.sp,
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                },
+                title = { Text("Pilih Tanggal Baru", fontSize = 20.sp) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = Color.Black
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = backgroundColor
-    ) { innerPadding ->
+    ) { pad ->
         Column(
-            modifier = Modifier
-                .padding(innerPadding)
+            Modifier
+                .padding(pad)
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("Cari tanggal...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search Icon") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp)),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    cursorColor = Color.DarkGray,
-                    focusedContainerColor = searchBg,
-                    unfocusedContainerColor = searchBg
-                ),
-                singleLine = true
-            )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Text("Tanggal piket kadaluarsa: ${tanggalLama.format(formatter)}", fontSize = 16.sp)
+            Spacer(Modifier.height(16.dp))
 
-            if (filteredSlot.isNotEmpty()) {
-                filteredSlot.forEach { slot ->
+            // ===== Navigasi Bulan =====
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                TextButton(onClick = {
+                    currentMonth.value = currentMonth.value.minusMonths(1)
+                }) { Text("<") }
+
+                Text(currentMonth.value.month.name + " " + currentMonth.value.year, fontSize = 18.sp)
+
+                TextButton(onClick = {
+                    currentMonth.value = currentMonth.value.plusMonths(1)
+                }) { Text(">") }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // ===== Header Hari =====
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                listOf("M", "S", "S", "R", "K", "J", "S").forEach { day ->
+                    Text(day, fontSize = 14.sp)
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // ===== Kalender Grid =====
+            val dates = generateCalendarDates(currentMonth.value)
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(7),
+                modifier = Modifier.height(300.dp)
+            ) {
+                items(dates) { date ->
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(cardColor)
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Nama : ${slot.nama}",
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    fontSize = 16.sp
-                                )
-                                Text(
-                                    text = "Tanggal : ${slot.tanggal}",
-                                    color = Color.White,
-                                    fontSize = 14.sp
-                                )
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(buttonColor)
-                                    .clickable {
-                                        // 👉 Navigasi ke halaman AmbilSlot
-                                        navController.navigate("ambil_slot_screen")
+                            .padding(2.dp)
+                            .size(40.dp)
+                            .background(
+                                color = when {
+                                    date == LocalDate.MIN -> Color.Transparent
+                                    date == selectedDate -> selectedColor
+                                    date == LocalDate.now() -> todayColor
+                                    else -> cardColor
+                                },
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .clickable(enabled = date.isAfter(LocalDate.now())) {
+                                if (date.isAfter(LocalDate.now())) {
+                                    selectedDate = date
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Tanggal harus mulai besok")
                                     }
-                                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Ambil Slot",
-                                    color = Color.White,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (date != LocalDate.MIN) {
+                            Text(
+                                text = date.dayOfMonth.toString(),
+                                color = Color.White,
+                                fontSize = 14.sp
+                            )
                         }
                     }
+                }
+            }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 50.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Tidak ada slot tersedia",
-                        color = Color.Gray,
-                        fontSize = 14.sp
-                    )
-                }
+            Spacer(Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    scope.launch {
+                        val ok = updateTanggalPiket(slotId, savedUserId, selectedDate.toString())
+                        snackbarHostState.showSnackbar(
+                            if (ok) "Tanggal piket berhasil diperbarui"
+                            else "Gagal memperbarui tanggal"
+                        )
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Simpan Tanggal Baru", color = Color.White)
             }
         }
     }
