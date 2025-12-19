@@ -3,6 +3,7 @@ package com.example.asramaku.pembayaran
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.asramaku.data.remote.ApiService
+import com.example.asramaku.screens.PaymentViewModel
 
 class PaymentViewModelFactory(
     private val api: ApiService

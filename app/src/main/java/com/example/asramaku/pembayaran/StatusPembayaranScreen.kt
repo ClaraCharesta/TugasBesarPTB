@@ -16,29 +16,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.asramaku.component.StatusPembayaranRow
-import com.example.asramaku.data.session.UserSession
+import com.example.asramaku.screens.PaymentViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatusPembayaranScreen(
     navController: NavController,
-    viewModel: PaymentViewModel
+    viewModel: PaymentViewModel,
+    userId: Int  // 🔹 ambil userId dari parameter
 ) {
 
     // =========================
-    // 🔥 USER LOGIN
-    // =========================
-    val userId = UserSession.userId
-
-    // =========================
-    // 🔥 DATA DARI API
+    // DATA DARI API
     // =========================
     val statusList by viewModel.statusList.collectAsState()
 
+    val currentRoute = navController.currentBackStackEntry
+        ?.destination
+        ?.route ?: ""
+
+
     LaunchedEffect(userId) {
-        userId?.let {
-            viewModel.loadAllStatus(it)
-        }
+        viewModel.loadAllStatus(userId)
     }
 
     Column(
@@ -74,7 +73,7 @@ fun StatusPembayaranScreen(
                 ) {
 
                     // =========================
-                    // HEADER TABEL (TIDAK DIUBAH)
+                    // HEADER TABEL
                     // =========================
                     Row(
                         modifier = Modifier
@@ -89,7 +88,7 @@ fun StatusPembayaranScreen(
                     }
 
                     // =========================
-                    // DATA REAL DARI DATABASE
+                    // DATA DARI DATABASE
                     // =========================
                     LazyColumn(modifier = Modifier.fillMaxWidth()) {
                         itemsIndexed(statusList) { index, item ->
@@ -105,17 +104,19 @@ fun StatusPembayaranScreen(
         }
 
         // =========================
-        // TAB MENU (TIDAK DIUBAH)
+        // TAB MENU
         // =========================
         PaymentTabMenu(
-            currentRoute = "status_pembayaran",
-            navController = navController
+            currentRoute = currentRoute,
+            navController = navController,
+            userId = userId
         )
+
     }
 }
 
 // =========================
-// HEADER CELL (UTUH)
+// HEADER CELL
 // =========================
 @Composable
 fun RowScope.TableHeaderCell(text: String, weight: Float) {

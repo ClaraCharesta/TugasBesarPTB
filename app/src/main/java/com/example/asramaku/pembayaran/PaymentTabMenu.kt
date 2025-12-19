@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,7 +20,8 @@ import androidx.navigation.NavController
 @Composable
 fun PaymentTabMenu(
     currentRoute: String,
-    navController: NavController
+    navController: NavController,
+    userId: Int
 ) {
     Row(
         modifier = Modifier
@@ -33,41 +33,45 @@ fun PaymentTabMenu(
     ) {
 
         // ===========================
-        //     TAB: TAGIHAN
+        // TAB: TAGIHAN
         // ===========================
         PaymentTabItem(
             label = "Tagihan",
             icon = Icons.Default.List,
-            selected = currentRoute == "payment_screen"
+            selected = currentRoute.startsWith("payment_screen")
         ) {
-            navController.navigate("payment_screen") {
-                popUpTo("payment_screen") { inclusive = true }
+            navController.navigate("payment_screen/$userId") {
+                popUpTo("payment_screen/$userId") { inclusive = true }
                 launchSingleTop = true
             }
         }
 
         // ===========================
-        //   TAB: STATUS PEMBAYARAN
+        // TAB: STATUS PEMBAYARAN
         // ===========================
         PaymentTabItem(
             label = "Status",
             icon = Icons.Default.CheckCircle,
-            selected = currentRoute == "status_pembayaran"
+            selected = currentRoute.startsWith("status_pembayaran")
         ) {
-            navController.navigate("status_pembayaran") {
-                launchSingleTop = true
+            if (!currentRoute.startsWith("status_pembayaran")) {
+                navController.navigate("status_pembayaran/$userId") {
+                    popUpTo("payment_screen/$userId") { inclusive = false }
+                    launchSingleTop = true
+                }
             }
         }
 
+
         // ===========================
-        //      TAB: RIWAYAT
+        // TAB: RIWAYAT
         // ===========================
         PaymentTabItem(
             label = "Riwayat",
             icon = Icons.Default.History,
-            selected = currentRoute == "riwayat_pembayaran"
+            selected = currentRoute.startsWith("riwayat_pembayaran")
         ) {
-            navController.navigate("riwayat_pembayaran") {
+            navController.navigate("riwayat_pembayaran/$userId") {
                 launchSingleTop = true
             }
         }

@@ -1,4 +1,4 @@
-package com.example.asramaku.pembayaran
+package com.example.asramaku.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,22 +17,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.asramaku.data.model.Payment
-import com.example.asramaku.data.session.UserSession
+
 
 @Composable
 fun PaymentModuleScreen(
     navController: NavController,
-    viewModel: PaymentViewModel
+    viewModel: PaymentViewModel,
+    userId: Int // 🔹 ambil userId dari parameter
 ) {
 
     val tagihanList by viewModel.tagihanList.collectAsState()
 
-    // ✅ AMBIL userId DARI SESSION (BUKAN HARDCODE)
-    val userId = UserSession.userId
-
     LaunchedEffect(userId) {
-        userId?.let {
-            viewModel.loadTagihan(it)
+        if (userId != 0) {
+            viewModel.loadTagihan(userId)
         }
     }
 
@@ -87,7 +85,7 @@ fun PaymentModuleScreen(
                             payment = item,
                             onBayarClick = {
                                 navController.navigate(
-                                    "konfirmasi_pembayaran/${item.bulan}/${item.totalTagihan}"
+                                    "konfirmasi_pembayaran/${userId}/${item.bulan}/${item.totalTagihan}"
                                 )
                             }
                         )
@@ -99,7 +97,11 @@ fun PaymentModuleScreen(
         // =========================
         // BOTTOM NAVIGATION
         // =========================
-        BottomNavigationBar(navController)
+        BottomNavigationBar(
+            navController = navController,
+            userId = userId
+        )
+
     }
 }
 
@@ -131,7 +133,6 @@ fun TagihanCard(
                 horizontalArrangement = Arrangement.End
             ) {
 
-                // ✅ LOGIKA LAMA TETAP AMAN
                 val isDisabled = payment.buktiBayar != null
 
                 Button(
@@ -149,7 +150,10 @@ fun TagihanCard(
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavController) {
+fun BottomNavigationBar(
+    navController: NavController,
+    userId: Int
+) {
     NavigationBar(
         containerColor = Color(0xFFF3E6F7)
     ) {
@@ -163,16 +167,23 @@ fun BottomNavigationBar(navController: NavController) {
 
         NavigationBarItem(
             selected = false,
-            onClick = { navController.navigate("status_pembayaran") },
+            onClick = {
+                navController.navigate("status_pembayaran/$userId")
+            },
             icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Status") },
             label = { Text("Status") }
         )
 
+
+
         NavigationBarItem(
             selected = false,
-            onClick = { navController.navigate("riwayat_pembayaran") },
+            onClick = {
+                navController.navigate("riwayat_pembayaran/$userId")
+            },
             icon = { Icon(Icons.Default.History, contentDescription = "Riwayat") },
             label = { Text("Riwayat") }
         )
+
     }
 }

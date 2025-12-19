@@ -1,6 +1,6 @@
 package com.example.asramaku.laporan
 
-import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,198 +10,202 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.asramaku.model.DummyData
+import com.example.asramaku.data.local.TokenManager
+import com.example.asramaku.data.remote.RetrofitClient
+import com.example.asramaku.model.Laporan
 import com.example.asramaku.ui.theme.*
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailLaporan(navController: NavController, laporanId: String) {
-    val laporan = DummyData.daftarLaporan.find { it.id == laporanId }
+fun DetailLaporan(
+    navController: NavController,
+    laporanId: Int
+) {
+    val context = LocalContext.current
+    val tokenManager = remember { TokenManager(context) }
 
-    if (laporan == null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Laporan tidak ditemukan")
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var laporan by remember { mutableStateOf<Laporan?>(null) }
+
+    LaunchedEffect(laporanId) {
+        try {
+            val token = tokenManager.token.first()
+
+            if (token.isNotEmpty()) {
+                val response = RetrofitClient.instance.getReportById(
+                    token = "Bearer $token",
+                    id = laporanId
+                )
+
+                if (response.isSuccessful) {
+                    laporan = response.body()?.data
+                    Log.d("DETAIL", "DATA LAPORAN: ${response.body()?.data}")
+                } else {
+                    errorMessage = "Gagal memuat detail laporan"
+                }
+            } else {
+                errorMessage = "Token tidak ditemukan"
+            }
+        } catch (e: Exception) {
+            errorMessage = e.message
+        } finally {
+            isLoading = false
         }
-        return
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Daftar Laporan Saya") },
+                title = { Text("Detail Laporan") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kembali")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = LightYellow
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LightYellow)
             )
         },
         containerColor = LightYellow
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = LightTeal
-                )
-            ) {
+    ) { padding ->
+
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            errorMessage != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(errorMessage ?: "Terjadi kesalahan")
+                }
+            }
+
+            laporan != null -> {
+                val data = laporan!!
+
+                // ================= URL FOTO FINAL =================
+                val imageUrl = data.photoUrl?.takeIf { it.isNotBlank() }?.let {
+                    if (it.startsWith("http")) {
+                        it
+                    } else {
+                        "http://10.0.2.2:3000$it"
+                    }
+                }
+
+
+                Log.d("DETAIL", "IMAGE URL: $imageUrl")
+
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
+                        .padding(padding)
                         .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+
+                    Text(
+                        text = data.title,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DarkTeal
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = when (data.status) {
+                            "pending" -> Color(0xFFFFE082)
+                            "processing" -> Color(0xFF90CAF9)
+                            else -> Color(0xFFA5D6A7)
+                        }
                     ) {
                         Text(
-                            text = laporan.judulKerusakan,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkTeal,
-                            modifier = Modifier.weight(1f)
+                            text = data.status,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                         )
-
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = when (laporan.status) {
-                                "Menunggu" -> Color(0xFFFFE5E5)
-                                "Diproses" -> Color(0xFFFFF3E0)
-                                else -> Color(0xFFE8F5E9)
-                            }
-                        ) {
-                            Text(
-                                text = laporan.status,
-                                fontSize = 12.sp,
-                                color = when (laporan.status) {
-                                    "Menunggu" -> RedButton
-                                    "Diproses" -> Color(0xFFF57C00)
-                                    else -> Color(0xFF4CAF50)
-                                },
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                            )
-                        }
                     }
 
-                    Text(
-                        text = laporan.tanggal,
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Divider(color = Color.LightGray)
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Deskripsi Kerusakan:",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = DarkTeal
-                    )
-                    Text(
-                        text = laporan.deskripsiKerusakan,
-                        fontSize = 14.sp,
-                        color = Color.DarkGray,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "Lokasi/Kamar:",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = DarkTeal
-                    )
-                    Text(
-                        text = laporan.lokasiKamar,
-                        fontSize = 14.sp,
-                        color = Color.DarkGray,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "Foto:",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = DarkTeal
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    if (laporan.fotoUrl != null) {
-                        Card(
+                    // ================= FOTO =================
+                    if (imageUrl != null) {
+                        Image(
+                            painter = rememberAsyncImagePainter(imageUrl),
+                            contentDescription = null,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(200.dp),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Image(
-                                painter = rememberAsyncImagePainter(Uri.parse(laporan.fotoUrl)),
-                                contentDescription = "Foto Kerusakan",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
+                                .height(220.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Crop
+                        )
                     } else {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(200.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.White
-                            )
+                                .height(220.dp),
+                            colors = CardDefaults.cardColors(containerColor = LightTeal),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Box(
+                            Column(
                                 modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Icon(
-                                        Icons.Default.PhotoLibrary,
-                                        contentDescription = "Tidak ada foto",
-                                        modifier = Modifier.size(48.dp),
-                                        tint = Color.LightGray
-                                    )
-                                    Text(
-                                        text = "Tidak ada foto",
-                                        color = Color.Gray,
-                                        fontSize = 14.sp,
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    )
-                                }
+                                Icon(
+                                    Icons.Default.PhotoLibrary,
+                                    contentDescription = null,
+                                    tint = Color.LightGray,
+                                    modifier = Modifier.size(48.dp)
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text("Tidak ada foto", color = DarkTeal)
                             }
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Deskripsi Kerusakan", fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(6.dp))
+                            Text(data.description)
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Lokasi", fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(6.dp))
+                            Text(data.location ?: "-")
                         }
                     }
                 }

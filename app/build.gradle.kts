@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.google.gms.google.services)
 }
 
-
 android {
     namespace = "com.example.asramaku"
     compileSdk = 36
@@ -29,22 +28,39 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
+    }
+
+    // ===================== PACKAGING =====================
+    packaging {
+        resources {
+            excludes += listOf(
+                "/META-INF/INDEX.LIST",
+                "/META-INF/DEPENDENCIES",
+                "/META-INF/LICENSE",
+                "/META-INF/LICENSE.txt",
+                "/META-INF/license.txt",
+                "/META-INF/NOTICE",
+                "/META-INF/NOTICE.txt",
+                "/META-INF/notice.txt",
+                "/META-INF/io.netty.versions.properties" // <=== tambahkan ini
+            )
+        }
     }
 }
 
 dependencies {
-
-
-
     implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
     implementation("com.google.firebase:firebase-messaging-ktx")
     //noinspection UseTomlInstead
@@ -68,11 +84,15 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.firebase.appdistribution.gradle)
+    implementation(libs.androidx.compose.runtime.livedata)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

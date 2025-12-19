@@ -24,7 +24,8 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.asramaku.R
 import com.example.asramaku.component.RekeningCard
-import com.example.asramaku.data.session.UserSession
+import com.example.asramaku.screens.PaymentViewModel
+import com.example.asramaku.navigation.Screen
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,11 +33,11 @@ import java.io.File
 fun KonfirmasiPembayaranScreen(
     navController: NavController,
     viewModel: PaymentViewModel,
+    userId: Int,          // ⬅️ userId diteruskan langsung
     bulan: String,
     total: Int
 ) {
     val context = LocalContext.current
-    val userId = UserSession.userId   // dari session
 
     // ================= STATE =================
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -171,15 +172,13 @@ fun KonfirmasiPembayaranScreen(
                     // ================= KIRIM =================
                     Button(
                         onClick = {
-                            if (userId != null) {
-                                viewModel.submitPayment(
-                                    context = context,          // 🔥 WAJIB
-                                    userId = userId,
-                                    bulan = bulan,
-                                    totalTagihan = total,
-                                    buktiBayarUri = selectedImageUri
-                                )
-                            }
+                            viewModel.submitPayment(
+                                context = context,
+                                userId = userId,          // ⬅️ pakai parameter userId
+                                bulan = bulan,
+                                totalTagihan = total,
+                                buktiBayarUri = selectedImageUri
+                            )
                         },
                         enabled = selectedImageUri != null &&
                                 !isLoading &&
@@ -260,8 +259,9 @@ fun KonfirmasiPembayaranScreen(
                 Button(
                     onClick = {
                         showSuccessPopup = false
-                        navController.navigate("payment_screen") {
-                            popUpTo("payment_screen") { inclusive = true }
+                        navController.navigate(Screen.Payment.createRoute(userId)) {
+                            popUpTo(Screen.Payment.route) { inclusive = false }
+                            launchSingleTop = true
                         }
                     }
                 ) {

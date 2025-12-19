@@ -1,4 +1,4 @@
-package com.example.asramaku.pembayaran
+package com.example.asramaku.screens
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
 import com.example.asramaku.MyApp
 import com.example.asramaku.data.model.Payment
@@ -134,22 +135,20 @@ class PaymentViewModel(
     }
 
     // ================= DETAIL =================
-    fun loadPaymentDetail(paymentId: Int) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val response = api.getPaymentDetail(paymentId)
-                if (response.isSuccessful) {
-                    _detailPayment.value = response.body()
-                } else {
-                    _errorMessage.value = "Gagal memuat detail pembayaran"
-                }
-            } catch (e: Exception) {
-                _errorMessage.value = e.message ?: "Error detail pembayaran"
+    fun getDetailPayment(paymentId: Int) = liveData {
+        try {
+            val response = api.getPaymentDetail(paymentId)
+            if (response.isSuccessful) {
+                emit(response.body())
+            } else {
+                emit(null)
             }
-            _isLoading.value = false
+        } catch (e: Exception) {
+            emit(null)
         }
     }
+
+
 
     // =====================================================
     // 🔥 SUBMIT PEMBAYARAN (FIX MULTER)

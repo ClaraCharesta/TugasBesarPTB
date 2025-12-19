@@ -248,6 +248,7 @@ fun BuatLaporan(navController: NavController) {
 
 // ================= UPLOAD FUNCTION =================
 
+// ================= UPLOAD FUNCTION FINAL =================
 suspend fun uploadLaporan(
     context: Context,
     title: String,
@@ -257,19 +258,36 @@ suspend fun uploadLaporan(
     token: String
 ): Boolean {
     return try {
+        if (title.isBlank() || description.isBlank()) {
+            Toast.makeText(context, "Judul dan deskripsi wajib diisi", Toast.LENGTH_SHORT).show()
+            return false
+        }
+
+        if (token.isBlank()) {
+            Toast.makeText(context, "Token tidak ditemukan", Toast.LENGTH_SHORT).show()
+            return false
+        }
+
         val api = RetrofitClient.instance
 
+        // ===== RequestBody untuk teks =====
         val titleBody = title.toRequestBody("text/plain".toMediaTypeOrNull())
         val descBody = description.toRequestBody("text/plain".toMediaTypeOrNull())
         val locationBody = location.toRequestBody("text/plain".toMediaTypeOrNull())
 
-        val photoPart = imageUri?.let { uri ->
+        // ===== Multipart file (opsional) =====
+        val photoPart: MultipartBody.Part? = imageUri?.let { uri ->
             val file = File(getPathFromUri(context, uri))
+            if (!file.exists() || file.length() == 0L) {
+                Toast.makeText(context, "File foto tidak valid", Toast.LENGTH_SHORT).show()
+                return false
+            }
             val request = file.asRequestBody("image/*".toMediaTypeOrNull())
             MultipartBody.Part.createFormData("photo", file.name, request)
         }
 
-        val res = api.createReport(
+        // ===== Kirim ke API =====
+        val response = api.createReport(
             token = "Bearer $token",
             title = titleBody,
             description = descBody,
@@ -277,22 +295,36 @@ suspend fun uploadLaporan(
             photo = photoPart
         )
 
-        res.isSuccessful
+        if (response.isSuccessful) {
+            true
+        } else {
+            // Bisa cek error dari backend
+            val msg = response.errorBody()?.string()
+            Toast.makeText(context, "Gagal: $msg", Toast.LENGTH_SHORT).show()
+            false
+        }
+
     } catch (e: Exception) {
         e.printStackTrace()
+        Toast.makeText(context, "Terjadi kesalahan: ${e.message}", Toast.LENGTH_SHORT).show()
         false
     }
 }
 
+// ===== Fungsi bantu create URI kamera =====
 fun createImageUri(context: Context): Uri? {
     val time = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val file = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "IMG_$time.jpg")
     return FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
 }
 
+// ===== Fungsi bantu ambil path dari URI =====
 fun getPathFromUri(context: Context, uri: Uri): String {
-    val input = context.contentResolver.openInputStream(uri)!!
-    val file = File(context.cacheDir, "temp_image.jpg")
-    input.copyTo(file.outputStream())
+    val inputStream = context.contentResolver.openInputStream(uri)
+        ?: throw IllegalArgumentException("Tidak bisa membuka URI")
+    val file = File(context.cacheDir, "upload_${System.currentTimeMillis()}.jpg")
+    file.outputStream().use { output ->
+        inputStream.copyTo(output)
+    }
     return file.absolutePath
 }

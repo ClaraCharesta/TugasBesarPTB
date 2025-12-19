@@ -95,14 +95,6 @@ fun ReportScreen(
                 icon = Icons.Default.List,
                 onClick = { navController.navigate("daftar_laporan") }
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            MenuCard(
-                title = "Notifikasi",
-                icon = Icons.Default.Notifications,
-                onClick = { navController.navigate("notifikasi") }
-            )
         }
     }
 }

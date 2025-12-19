@@ -55,49 +55,4 @@ object DummyData {
     )
 
     val jadwalUserMap = mutableStateMapOf<String, String>()
-
-    val daftarLaporan = mutableStateListOf(
-        Laporan(
-            id = "1",
-            judulKerusakan = "Lampu Kamar Rusak",
-            deskripsiKerusakan = "Lampu kamar kedip-kedip kemudian tidak menyala",
-            lokasiKamar = "Kamar B-12",
-            fotoUrl = null,
-            tanggal = "16 oktober 2025",
-            status = "Menunggu"
-        ),
-        Laporan(
-            id = "2",
-            judulKerusakan = "Keran Air Bocor",
-            deskripsiKerusakan = "Keran air di kamar mandi bocor terus menerus",
-            lokasiKamar = "Kamar B-12",
-            fotoUrl = null,
-            tanggal = "09 Oktober 2025",
-            status = "Diproses"
-        )
-    )
-
-    val daftarNotifikasi = mutableStateListOf(
-        Notifikasi(
-            id = "1",
-            judul = "Laporan berhasil dikirim",
-            pesan = "Laporan 'Lampu Kamar Rusak' telah dikirim",
-            waktu = "2 jam yang lalu",
-            tipe = "kirim"
-        ),
-        Notifikasi(
-            id = "2",
-            judul = "Laporan dihapus",
-            pesan = "Laporan 'Meja Rusak' telah dihapus",
-            waktu = "5 jam yang lalu",
-            tipe = "hapus"
-        ),
-        Notifikasi(
-            id = "3",
-            judul = "Laporan diubah",
-            pesan = "Laporan 'Keran Air' telah diubah",
-            waktu = "1 hari yang lalu",
-            tipe = "edit"
-        )
-    )
 }

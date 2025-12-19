@@ -51,7 +51,7 @@ sealed class Screen(val route: String) {
     }
 
     object Report : Screen("report_screen")
-    object Payment : Screen("payment_screen")
+
 
     object JadwalPiket : Screen("jadwal_piket_screen/{userId}/{nama}") {
         fun createRoute(userId: Int, nama: String) = "jadwal_piket_screen/$userId/${Uri.encode(nama)}"
@@ -88,8 +88,16 @@ sealed class Screen(val route: String) {
 
 
 
+
+
     object RekapPiket : Screen("rekap_piket_screen/{userId}/{namaLogin}") {
         fun createRoute(userId: Int, namaLogin: String) = "rekap_piket_screen/$userId/${Uri.encode(namaLogin)}"
+    }
+
+
+
+    object Payment : Screen("payment_screen/{userId}") {
+        fun createRoute(userId: Int) = "payment_screen/$userId"
     }
 
 
@@ -317,24 +325,39 @@ fun NavGraph(navController: NavHostController) {
         // ============================
         // MODUL PEMBAYARAN
         // ============================
-        composable(Screen.Payment.route) {
+        composable(
+            route = Screen.Payment.route, // route = "payment_screen/{userId}"
+            arguments = listOf(navArgument("userId") { type = NavType.IntType })
+        ) { backStackEntry ->
             val vm: PaymentViewModel = viewModel(
                 factory = PaymentViewModelFactory(RetrofitClient.instance)
             )
-            PaymentModuleScreen(navController, vm)
+
+            // Ambil userId dari navigation argument
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+
+            PaymentModuleScreen(
+                navController = navController,
+                viewModel = vm,
+                userId = userId
+            )
         }
+
+
 
         // ============================
         // KONFIRMASI PEMBAYARAN
         // ============================
         composable(
-            route = "konfirmasi_pembayaran/{bulan}/{total}",
+            route = "konfirmasi_pembayaran/{userId}/{bulan}/{total}",
             arguments = listOf(
+                navArgument("userId") { type = NavType.IntType },
                 navArgument("bulan") { type = NavType.StringType },
                 navArgument("total") { type = NavType.IntType }
             )
         ) { backStackEntry ->
 
+            val userId = backStackEntry.arguments!!.getInt("userId")
             val bulan = backStackEntry.arguments!!.getString("bulan")!!
             val total = backStackEntry.arguments!!.getInt("total")
 
@@ -345,15 +368,24 @@ fun NavGraph(navController: NavHostController) {
             KonfirmasiPembayaranScreen(
                 navController = navController,
                 viewModel = vm,
+                userId = userId,       // ✅ sekarang diteruskan
                 bulan = bulan,
                 total = total
             )
         }
 
+
         // ============================
         // STATUS PEMBAYARAN
         // ============================
-        composable("status_pembayaran") {
+        composable(
+            "status_pembayaran/{userId}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+
+            val userId = backStackEntry.arguments!!.getInt("userId")
 
             val vm: PaymentViewModel = viewModel(
                 factory = PaymentViewModelFactory(RetrofitClient.instance)
@@ -361,13 +393,19 @@ fun NavGraph(navController: NavHostController) {
 
             StatusPembayaranScreen(
                 navController = navController,
-                viewModel = vm
+                viewModel = vm,
+                userId = userId // ✅ diteruskan ke screen
             )
         }
 
+
 // RIWAYAT PEMBAYARAN (FIX FINAL)
 // ============================
-        composable("riwayat_pembayaran") {
+        composable("riwayat_pembayaran/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.IntType })
+        ) { backStackEntry ->
+
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
 
             val vm: PaymentViewModel = viewModel(
                 factory = PaymentViewModelFactory(RetrofitClient.instance)
@@ -376,41 +414,44 @@ fun NavGraph(navController: NavHostController) {
             RiwayatPembayaranScreen(
                 navController = navController,
                 viewModel = vm,
-                onDetailClick = { id ->
-                    navController.navigate("detail_pembayaran/$id")
+                userId = userId,
+                onDetailClick = { uId, paymentId ->
+                    navController.navigate("detail_pembayaran/$uId/$paymentId")
                 },
-                onDeleteItem = { paymentId ->
-
-                    val userId = com.example.asramaku.data.session.UserSession.userId
-                    if (userId != null) {
-                        vm.deletePayment(paymentId, userId) // ✅ LANGSUNG ID DATABASE
-                    }
+                onDeleteItem = { uId, paymentId ->
+                    vm.deletePayment(paymentId, uId)
                 }
             )
         }
+
 
         // ============================
 // DETAIL PEMBAYARAN (FIX FINAL)
 // ============================
         composable(
-            route = "detail_pembayaran/{paymentId}",
+            route = "detail_pembayaran/{userId}/{paymentId}",
             arguments = listOf(
+                navArgument("userId") { type = NavType.IntType },
                 navArgument("paymentId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
 
-            val paymentId = backStackEntry.arguments!!.getInt("paymentId")
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+            val paymentId = backStackEntry.arguments?.getInt("paymentId") ?: 0
 
             val vm: PaymentViewModel = viewModel(
                 factory = PaymentViewModelFactory(RetrofitClient.instance)
             )
 
             DetailPembayaranScreen(
+                navController = navController,
+                userId = userId,        // ✅ lempar userId
                 paymentId = paymentId,
                 viewModel = vm,
                 onBackClick = { navController.popBackStack() }
             )
         }
+
 
         // ========================
         // LAPORAN KERUSAKAN
@@ -427,22 +468,33 @@ fun NavGraph(navController: NavHostController) {
 
         composable(
             route = "detail_laporan/{laporanId}",
-            arguments = listOf(navArgument("laporanId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("laporanId") { type = NavType.IntType } // ✅ ubah jadi IntType
+            )
         ) { backStackEntry ->
-            val laporanId = backStackEntry.arguments?.getString("laporanId") ?: ""
-            DetailLaporan(navController = navController, laporanId = laporanId)
+
+            val laporanId = backStackEntry.arguments?.getInt("laporanId") ?: 0
+
+            DetailLaporan(
+                navController = navController,
+                laporanId = laporanId
+            )
         }
+
 
         composable(
             route = "edit_laporan/{laporanId}",
-            arguments = listOf(navArgument("laporanId") { type = NavType.StringType })
+            arguments = listOf(navArgument("laporanId") { type = NavType.IntType }) // ✅ ubah jadi IntType
         ) { backStackEntry ->
-            val laporanId = backStackEntry.arguments?.getString("laporanId") ?: ""
-            EditLaporan(navController = navController, laporanId = laporanId)
+
+            val laporanId = backStackEntry.arguments?.getInt("laporanId") ?: 0 // ✅ default 0 jika null
+
+            EditLaporan(
+                navController = navController,
+                laporanId = laporanId
+            )
         }
 
-        composable("notifikasi") {
-            Notifikasi(navController = navController)
-        }
+
     }
 }

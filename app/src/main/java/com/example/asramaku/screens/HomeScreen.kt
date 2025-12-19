@@ -35,19 +35,17 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
     val userPrefs = remember { UserPreferences(context) }
     val storedName = remember { userPrefs.getName() } // bisa null
     val displayName = remember(userName, storedName) {
-            when {
-                !userName.isNullOrBlank() -> userName!!
-                !storedName.isNullOrBlank() -> storedName!!
-                else -> "User"
-            }
+        when {
+            !userName.isNullOrBlank() -> userName!!
+            !storedName.isNullOrBlank() -> storedName!!
+            else -> "User"
+        }
     }
 
-    // animasi muncul konten satu per satu
     var showHeader by remember { mutableStateOf(false) }
     var showLogo by remember { mutableStateOf(false) }
     var showModules by remember { mutableStateOf(false) }
 
-    // Jalankan animasi berurutan
     LaunchedEffect(Unit) {
         delay(150)
         showHeader = true
@@ -69,7 +67,7 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp)
-                .verticalScroll(scrollState), // biar bisa di-scroll
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.Top
         ) {
             // Header
@@ -151,7 +149,7 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
                         backgroundColor = moduleButtonColor,
                         textColor = textColor
                     ) {
-                        navController.navigate(Screen.Payment.route)
+                        navController.navigate(Screen.Payment.createRoute(userId))
                     }
 
                     ModuleItem(
@@ -169,10 +167,9 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
                         backgroundColor = moduleButtonColor,
                         textColor = textColor
                     ) {
-                        val namaLogin = displayName // ambil dari nama yang sudah kamu tentukan di atas
-                        navController.navigate("duty_module_screen/${userId}/${Uri.encode(namaLogin)}")
+                        val namaLogin = displayName
+                        navController.navigate(Screen.RekapPiket.createRoute(userId, namaLogin))
                     }
-
                 }
             }
 
@@ -180,13 +177,6 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
         }
     }
 }
-
-// Data class untuk representasi user login
-data class User(
-    val id: Int,
-    val name: String,
-    val role: String
-)
 
 @Composable
 fun ModuleItem(

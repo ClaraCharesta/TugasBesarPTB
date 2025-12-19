@@ -1,6 +1,5 @@
 package com.example.asramaku.pembayaran
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,73 +15,64 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.asramaku.screens.PaymentViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailPembayaranScreen(
+    navController: NavController,
     paymentId: Int,
+    userId: Int,
     viewModel: PaymentViewModel,
     onBackClick: () -> Unit
 ) {
 
-    // ================= LOAD DATA (TIDAK DIUBAH) =================
-    LaunchedEffect(paymentId) {
-        viewModel.loadPaymentDetail(paymentId)
+    // 🔑 panggil LiveData SEKALI
+    val detailLiveData = remember(paymentId) {
+        viewModel.getDetailPayment(paymentId)
     }
 
-    val pembayaran by viewModel.detailPayment.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val pembayaran by detailLiveData.observeAsState()
+    var isLoading by remember { mutableStateOf(true) }
+
+    // 🔑 loading berhenti setelah response datang
+    LaunchedEffect(pembayaran) {
+        isLoading = false
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = "Detail Pembayaran",
-                        color = Color.Black
-                    )
-                },
+                title = { Text("Detail Pembayaran", color = Color.Black) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = Color.Black
-                        )
+                        Icon(Icons.Default.ArrowBack, "Kembali")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFB7D7CF) // ✅ warna hijau mint seperti foto
+                    containerColor = Color(0xFFB7D7CF)
                 )
             )
         }
-    ) { paddingValues ->
+    ) { padding ->
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFFFF1D6)) // 🌼 background cream
-                .padding(paddingValues)
+                .background(Color(0xFFFFF1D6))
+                .padding(padding),
+            contentAlignment = Alignment.Center
         ) {
 
             when {
                 isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    CircularProgressIndicator()
                 }
 
                 pembayaran != null -> {
                     val data = pembayaran!!
-
-                    // ================= LOG DEBUG (TIDAK DIUBAH) =================
-                    LaunchedEffect(data.buktiBayar) {
-                        Log.d("BUKTI_BAYAR", data.buktiBayar ?: "NULL")
-                    }
 
                     Card(
                         modifier = Modifier
@@ -89,92 +80,39 @@ fun DetailPembayaranScreen(
                             .padding(16.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFD8EAD7) // 🌿 hijau pastel
-                        ),
-                        elevation = CardDefaults.cardElevation(4.dp)
+                            containerColor = Color(0xFFD8EAD7)
+                        )
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
+                        Column(Modifier.padding(16.dp)) {
 
-                            Text(
-                                text = "Bulan: ${data.bulan}",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            Text(
-                                text = "Total: Rp ${data.totalTagihan}",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Text("Bulan: ${data.bulan}")
+                            Text("Total: Rp ${data.totalTagihan}")
 
                             Row {
+                                Text("Status: ")
                                 Text(
-                                    text = "Status Pembayaran: ",
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = data.status,
-                                    fontSize = 15.sp,
+                                    data.status,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2E7D32) // hijau "Lunas"
+                                    color = Color(0xFF2E7D32)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(Modifier.height(12.dp))
+                            Text("Bukti Pembayaran")
 
-                            Text(
-                                text = "Bukti Pembayaran :",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Spacer(Modifier.height(8.dp))
 
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // ================= FOTO BUKTI BAYAR (TIDAK DIUBAH) =================
                             if (!data.buktiBayar.isNullOrEmpty()) {
-
-                                val imageUrl =
-                                    "http://10.0.2.2:3000${data.buktiBayar}"
-
                                 AsyncImage(
-                                    model = imageUrl,
-                                    contentDescription = "Bukti Pembayaran",
+                                    model = "http://10.0.2.2:3000${data.buktiBayar}",
+                                    contentDescription = null,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(180.dp)
-                                        .background(
-                                            color = Color(0xFF9ED0C3),
-                                            shape = RoundedCornerShape(12.dp)
-                                        ),
+                                        .height(180.dp),
                                     contentScale = ContentScale.Crop
                                 )
-
                             } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(160.dp)
-                                        .background(
-                                            color = Color(0xFF9ED0C3),
-                                            shape = RoundedCornerShape(12.dp)
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "Bukti pembayaran tidak tersedia",
-                                        fontSize = 12.sp,
-                                        color = Color.White
-                                    )
-                                }
+                                Text("Bukti pembayaran tidak tersedia")
                             }
                         }
                     }
@@ -182,8 +120,7 @@ fun DetailPembayaranScreen(
 
                 else -> {
                     Text(
-                        text = "Data pembayaran tidak ditemukan",
-                        modifier = Modifier.padding(16.dp),
+                        "Data pembayaran tidak ditemukan",
                         color = Color.Gray
                     )
                 }

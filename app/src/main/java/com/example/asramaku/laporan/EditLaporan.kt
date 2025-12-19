@@ -1,7 +1,6 @@
 package com.example.asramaku.laporan
 
 import android.Manifest
-import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -9,7 +8,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,81 +16,107 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
-import com.example.asramaku.model.DummyData
-import com.example.asramaku.model.Notifikasi
-import com.example.asramaku.ui.theme.*
+import com.example.asramaku.data.local.TokenManager
+import com.example.asramaku.data.remote.RetrofitClient
+import com.example.asramaku.model.Laporan
+import com.example.asramaku.ui.theme.DarkTeal
+import com.example.asramaku.ui.theme.LightYellow
 import com.example.asramaku.utils.createImageUri
-import java.util.*
+import com.example.asramaku.utils.uriToFile
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditLaporan(navController: NavController, laporanId: String) {
-    val laporanIndex = DummyData.daftarLaporan.indexOfFirst { it.id == laporanId }
+fun EditLaporan(
+    navController: NavController,
+    laporanId: Int
+) {
+    val context = LocalContext.current
+    val tokenManager = remember { TokenManager(context) }
+    val scope = rememberCoroutineScope()
 
-    if (laporanIndex == -1) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Laporan tidak ditemukan")
-        }
-        return
-    }
+    var isLoading by remember { mutableStateOf(true) }
 
-    val laporan = DummyData.daftarLaporan[laporanIndex]
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
 
-    var judulKerusakan by remember { mutableStateOf(laporan.judulKerusakan) }
-    var deskripsiKerusakan by remember { mutableStateOf(laporan.deskripsiKerusakan) }
-    var lokasiKamar by remember { mutableStateOf(laporan.lokasiKamar) }
-    var imageUri by remember { mutableStateOf<Uri?>(laporan.fotoUrl?.let { Uri.parse(it) }) }
-    var showDialog by remember { mutableStateOf(false) }
+    // 🔑 PEMISAHAN PENTING
+    var oldPhotoUrl by remember { mutableStateOf<String?>(null) }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+
+    var showConfirmDialog by remember { mutableStateOf(false) }
     var showImagePickerDialog by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
-    val context = LocalContext.current
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            imageUri = it
+    // ================= FETCH DETAIL =================
+    LaunchedEffect(laporanId) {
+        try {
+            val token = tokenManager.token.first()
+
+            val response = RetrofitClient.instance.getReportById(
+                token = "Bearer $token",
+                id = laporanId
+            )
+
+            if (response.isSuccessful) {
+                val data = response.body()?.data
+                if (data != null) {
+                    title = data.title ?: ""
+                    description = data.description ?: ""
+                    location = data.location ?: ""
+                    oldPhotoUrl = data.photoUrl // ⬅️ SIMPAN FOTO LAMA
+                }
+            } else {
+                Toast.makeText(context, "Gagal memuat data", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+        } finally {
+            isLoading = false
         }
+    }
+
+    // ================= IMAGE PICKER =================
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        imageUri = uri
     }
 
     val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
+        ActivityResultContracts.TakePicture()
     ) { success ->
-        if (success) {
-            imageUri = tempCameraUri
-        }
+        if (success) imageUri = tempCameraUri
     }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            // pakai util terpusat
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
             tempCameraUri = createImageUri(context)
             tempCameraUri?.let { cameraLauncher.launch(it) }
-        } else {
-            Toast.makeText(context, "Izin kamera ditolak", Toast.LENGTH_SHORT).show()
         }
     }
 
+    // ================= UI =================
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Edit Laporan") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kembali")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -101,256 +125,187 @@ fun EditLaporan(navController: NavController, laporanId: String) {
             )
         },
         containerColor = LightYellow
-    ) { paddingValues ->
+    ) { padding ->
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+            return@Scaffold
+        }
+
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+                .padding(padding)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Nama Barang
-            Text(
-                text = "Nama Barang",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+
             OutlinedTextField(
-                value = judulKerusakan,
-                onValueChange = { judulKerusakan = it },
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = DarkTeal,
-                    unfocusedBorderColor = Color.LightGray
-                ),
-                shape = RoundedCornerShape(8.dp)
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Nama Barang") },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // Deskripsi Kerusakan
-            Text(
-                text = "Deskripsi Kerusakan",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
             OutlinedTextField(
-                value = deskripsiKerusakan,
-                onValueChange = { deskripsiKerusakan = it },
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Deskripsi Kerusakan") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = DarkTeal,
-                    unfocusedBorderColor = Color.LightGray
-                ),
-                shape = RoundedCornerShape(8.dp)
+                    .height(120.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // Lokasi/Kamar
-            Text(
-                text = "Lokasi/Kamar",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
             OutlinedTextField(
-                value = lokasiKamar,
-                onValueChange = { lokasiKamar = it },
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = DarkTeal,
-                    unfocusedBorderColor = Color.LightGray
-                ),
-                shape = RoundedCornerShape(8.dp)
+                value = location,
+                onValueChange = { location = it },
+                label = { Text("Lokasi / Kamar") },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Upload Foto
-            Text(
-                text = "Upload Foto",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            Spacer(Modifier.height(16.dp))
 
             Button(
                 onClick = { showImagePickerDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White
-                ),
-                shape = RoundedCornerShape(8.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    Icons.Default.PhotoLibrary,
-                    contentDescription = "Pilih Foto",
-                    tint = DarkTeal
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Tambahkan Foto", color = DarkTeal)
+                Icon(Icons.Default.PhotoLibrary, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Pilih Foto")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // Preview Foto
-            Text(
-                text = "Foto Barang Rusak",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            if (imageUri != null) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
+            // ================= PREVIEW FOTO =================
+            when {
+                imageUri != null -> {
                     Image(
                         painter = rememberAsyncImagePainter(imageUri),
-                        contentDescription = "Preview",
-                        modifier = Modifier.fillMaxSize(),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
                         contentScale = ContentScale.Crop
                     )
                 }
-            } else {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+
+                oldPhotoUrl != null -> {
+                    Image(
+                        painter = rememberAsyncImagePainter(
+                            "http://10.0.2.2:3000$oldPhotoUrl"
+                        ),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentScale = ContentScale.Crop
                     )
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.PhotoLibrary,
-                            contentDescription = "Foto Barang Rusak",
-                            modifier = Modifier.size(64.dp),
-                            tint = Color.LightGray
-                        )
-                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
 
-            // Buttons
-            Row(
+            Button(
+                onClick = { showConfirmDialog = true },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                colors = ButtonDefaults.buttonColors(containerColor = DarkTeal)
             ) {
-                Button(
-                    onClick = { showDialog = true },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = DarkTeal
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Kirim Perubahan", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                }
-
-                Button(
-                    onClick = { navController.navigateUp() },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = RedButton
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Batal", fontWeight = FontWeight.Bold)
-                }
+                Text("Simpan Perubahan")
             }
         }
     }
 
-    // Image Picker Dialog
+    // ================= PILIH FOTO =================
     if (showImagePickerDialog) {
         AlertDialog(
             onDismissRequest = { showImagePickerDialog = false },
             title = { Text("Pilih Foto") },
-            text = { Text("Pilih sumber foto") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showImagePickerDialog = false
-                        galleryLauncher.launch("image/*")
-                    }
-                ) {
-                    Text("Galeri", color = DarkTeal)
-                }
+                TextButton(onClick = {
+                    showImagePickerDialog = false
+                    galleryLauncher.launch("image/*")
+                }) { Text("Galeri") }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        showImagePickerDialog = false
-                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
-                ) {
-                    Text("Kamera", color = DarkTeal)
-                }
-            },
-            containerColor = Color.White
+                TextButton(onClick = {
+                    showImagePickerDialog = false
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                }) { Text("Kamera") }
+            }
         )
     }
 
-    // Confirmation Dialog
-    if (showDialog) {
+    // ================= SIMPAN =================
+    if (showConfirmDialog) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("Apakah kamu yakin?") },
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("Simpan perubahan?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        // Update laporan
-                        DummyData.daftarLaporan[laporanIndex] = laporan.copy(
-                            judulKerusakan = judulKerusakan,
-                            deskripsiKerusakan = deskripsiKerusakan,
-                            lokasiKamar = lokasiKamar,
-                            fotoUrl = imageUri?.toString()
-                        )
+                TextButton(onClick = {
+                    showConfirmDialog = false
 
-                        // Tambah notifikasi
-                        val newNotifikasi = Notifikasi(
-                            id = (DummyData.daftarNotifikasi.size + 1).toString(),
-                            judul = "Laporan diubah",
-                            pesan = "Laporan '$judulKerusakan' telah diubah",
-                            waktu = "Baru saja",
-                            tipe = "edit"
-                        )
-                        DummyData.daftarNotifikasi.add(0, newNotifikasi)
+                    scope.launch {
+                        try {
+                            val token = tokenManager.token.first()
 
-                        showDialog = false
-                        navController.navigateUp()
+                            val titleBody = title.toRequestBody("text/plain".toMediaType())
+                            val descBody = description.toRequestBody("text/plain".toMediaType())
+                            val locBody = location.toRequestBody("text/plain".toMediaType())
+
+                            val photoPart = imageUri?.let {
+                                val file = uriToFile(it, context)
+                                val reqFile = file.asRequestBody("image/*".toMediaType())
+                                MultipartBody.Part.createFormData(
+                                    "photo",
+                                    file.name,
+                                    reqFile
+                                )
+                            }
+
+                            RetrofitClient.instance.updateReport(
+                                token = "Bearer $token",
+                                id = laporanId,
+                                title = titleBody,
+                                description = descBody,
+                                location = locBody,
+                                photo = photoPart
+                            )
+
+                            Toast.makeText(
+                                context,
+                                "Laporan berhasil diperbarui",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            navController.navigateUp()
+
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "Gagal menyimpan perubahan",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
-                ) {
-                    Text("Ya", color = DarkTeal)
+                }) {
+                    Text("Ya")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("Tidak", color = RedButton)
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("Batal")
                 }
-            },
-            containerColor = Color.White
+            }
         )
     }
 }

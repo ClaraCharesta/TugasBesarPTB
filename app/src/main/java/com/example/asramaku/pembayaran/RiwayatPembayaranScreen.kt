@@ -3,6 +3,7 @@ package com.example.asramaku.pembayaran
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,61 +12,40 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.asramaku.component.RiwayatCard
-import com.example.asramaku.data.session.UserSession
+import com.example.asramaku.screens.PaymentViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RiwayatPembayaranScreen(
     navController: NavController,
     viewModel: PaymentViewModel,
-    onDetailClick: (Int) -> Unit = {},
-    onDeleteItem: (Int) -> Unit
+    userId: Int,                    // ✅ userId dari parameter
+    onDetailClick: (Int, Int) -> Unit, // (userId, paymentId)
+    onDeleteItem: (Int, Int) -> Unit   // (userId, paymentId)
 ) {
 
-    // =========================
-    // USER LOGIN
-    // =========================
-    val userId = UserSession.userId
-
-    // =========================
-    // LOAD DATA RIWAYAT (LUNAS)
-    // =========================
-    LaunchedEffect(userId) {
-        userId?.let {
-            viewModel.loadRiwayatLunas(it)
-        }
-    }
-
-    // =========================
-    // OBSERVE DATA
-    // =========================
+    // STATE DATA
     val riwayatLunas by viewModel.riwayatLunasList.collectAsState()
-
-    // =========================
-    // STATE DIALOG HAPUS
-    // =========================
     var showDialog by remember { mutableStateOf(false) }
     var paymentIdToDelete by remember { mutableStateOf<Int?>(null) }
 
-    // =========================
+    // LOAD DATA
+    LaunchedEffect(userId) {
+        viewModel.loadRiwayatLunas(userId)
+    }
+
     // DIALOG KONFIRMASI
-    // =========================
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = { Text("Hapus Riwayat?") },
-            text = {
-                Text("Apakah Anda yakin ingin menghapus riwayat pembayaran ini?")
-            },
+            text = { Text("Apakah Anda yakin ingin menghapus riwayat pembayaran ini?") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        paymentIdToDelete?.let { id ->
-                            onDeleteItem(id)   // 🔥 KIRIM ID DATABASE
-                        }
-                        showDialog = false
-                    }
-                ) {
+                TextButton(onClick = {
+                    paymentIdToDelete?.let { id -> onDeleteItem(userId, id) } // ✅ pakai userId
+                    showDialog = false
+                }) {
                     Text("Hapus", color = Color.Red)
                 }
             },
@@ -77,9 +57,7 @@ fun RiwayatPembayaranScreen(
         )
     }
 
-    // =========================
     // UI
-    // =========================
     Scaffold(
         topBar = {
             TopAppBar(
@@ -93,11 +71,11 @@ fun RiwayatPembayaranScreen(
         bottomBar = {
             PaymentTabMenu(
                 currentRoute = "riwayat_pembayaran",
-                navController = navController
+                navController = navController,
+                userId = userId  // ✅ lempar userId ke tab menu
             )
         }
     ) { innerPadding ->
-
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -115,17 +93,16 @@ fun RiwayatPembayaranScreen(
                             bulanTagihan = item.bulan,
                             jumlahTagihan = item.totalTagihan.toString(),
                             status = item.status,
-                            onDetailClick = {
-                                onDetailClick(item.id)
-                            },
+                            onDetailClick = { onDetailClick(userId, item.id) }, // ✅ lempar userId
                             onDeleteClick = {
-                                paymentIdToDelete = item.id   // ✅ ID ASLI
+                                paymentIdToDelete = item.id
                                 showDialog = true
                             }
                         )
                     }
                 }
             }
+
         }
     }
 }

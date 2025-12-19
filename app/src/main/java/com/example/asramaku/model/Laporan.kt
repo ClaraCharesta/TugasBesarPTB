@@ -1,11 +1,13 @@
 package com.example.asramaku.model
 
 data class Laporan(
-    val id: String,
-    val judulKerusakan: String,
-    val deskripsiKerusakan: String,
-    val lokasiKamar: String,
-    val fotoUrl: String?,
-    val tanggal: String,
-    val status: String = "Menunggu" // Status: Menunggu, Diproses, Selesai
+    val id: Int,
+    val userId: Int,
+    val title: String,
+    val description: String,
+    val location: String?,
+    val photoUrl: String?,
+    val status: String,
+    val createdAt: String,
+    val updatedAt: String
 )
