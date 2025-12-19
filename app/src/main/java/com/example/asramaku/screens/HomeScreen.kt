@@ -1,6 +1,5 @@
 package com.example.asramaku.screens
 
-import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,11 +20,15 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.asramaku.R
 import com.example.asramaku.navigation.Screen
-import kotlinx.coroutines.delay
 import com.example.asramaku.data.preferences.UserPreferences
+import kotlinx.coroutines.delay
 
 @Composable
-fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
+fun HomeScreen(
+    navController: NavController,
+    userName: String?,
+    userId: Int
+) {
     val backgroundColor = Color(0xFFFFE7C2)
     val moduleButtonColor = Color(0xFFB6DFD7)
     val moduleButtonColor2 = Color(0xFFD9ECE7)
@@ -33,11 +36,12 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
 
     val context = LocalContext.current
     val userPrefs = remember { UserPreferences(context) }
-    val storedName = remember { userPrefs.getName() } // bisa null
+    val storedName = remember { userPrefs.getName() }
+
     val displayName = remember(userName, storedName) {
         when {
-            !userName.isNullOrBlank() -> userName!!
-            !storedName.isNullOrBlank() -> storedName!!
+            !userName.isNullOrBlank() -> userName
+            !storedName.isNullOrBlank() -> storedName
             else -> "User"
         }
     }
@@ -58,23 +62,20 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
     val scrollState = rememberScrollState()
 
     Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor),
+        modifier = Modifier.fillMaxSize(),
         color = backgroundColor
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(24.dp)
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.Top
+                .verticalScroll(scrollState)
         ) {
-            // Header
+
+            // ===== HEADER =====
             AnimatedVisibility(
                 visible = showHeader,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut()
+                enter = fadeIn() + expandVertically()
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -88,9 +89,9 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
                         color = textColor
                     )
 
-                    IconButton(onClick = { /* TODO: navigasi ke profil */ }) {
+                    IconButton(onClick = { /* TODO profile */ }) {
                         Image(
-                            painter = painterResource(id = R.drawable.ic_profile),
+                            painter = painterResource(R.drawable.ic_profile),
                             contentDescription = "Profile",
                             modifier = Modifier.size(28.dp)
                         )
@@ -98,13 +99,12 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
 
-            // Logo
+            // ===== LOGO =====
             AnimatedVisibility(
                 visible = showLogo,
-                enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
-                exit = fadeOut()
+                enter = fadeIn() + slideInVertically { it / 2 }
             ) {
                 Column(
                     modifier = Modifier
@@ -114,35 +114,35 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.school_icon),
+                        painter = painterResource(R.drawable.school_icon),
                         contentDescription = "Asramaku Logo",
                         modifier = Modifier.size(120.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     Text(
                         text = "ASRAMAKU",
-                        fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
                         color = textColor
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(Modifier.height(32.dp))
 
-            // Modul Buttons
+            // ===== MODULE BUTTONS =====
             AnimatedVisibility(
                 visible = showModules,
-                enter = fadeIn() + slideInVertically(initialOffsetY = { it / 3 }),
-                exit = fadeOut()
+                enter = fadeIn() + slideInVertically { it / 3 }
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+
+                    // 🔹 PEMBAYARAN
                     ModuleItem(
                         title = "MODUL PEMBAYARAN",
                         iconRes = R.drawable.ic_payment,
@@ -152,8 +152,9 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
                         navController.navigate(Screen.Payment.createRoute(userId))
                     }
 
+                    // 🔹 PELAPORAN
                     ModuleItem(
-                        title = "MODUL  PELAPORAN KERUSAKAN BARANG",
+                        title = "MODUL PELAPORAN KERUSAKAN BARANG",
                         iconRes = R.drawable.ic_report,
                         backgroundColor = moduleButtonColor2,
                         textColor = textColor
@@ -161,19 +162,25 @@ fun HomeScreen(navController: NavController, userName: String?, userId: Int) {
                         navController.navigate(Screen.Report.route)
                     }
 
+                    // 🔹 PIKET (✅ BENAR → DUTY MODULE)
                     ModuleItem(
                         title = "MODUL PIKET",
                         iconRes = R.drawable.ic_duty,
                         backgroundColor = moduleButtonColor,
                         textColor = textColor
                     ) {
-                        val namaLogin = displayName
-                        navController.navigate(Screen.RekapPiket.createRoute(userId, namaLogin))
+                        navController.navigate(
+                            Screen.Duty.createRoute(
+                                userId,
+                                displayName ?: "User"
+                            )
+                        )
                     }
+
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(Modifier.height(32.dp))
         }
     }
 }
@@ -193,17 +200,15 @@ fun ModuleItem(
         onClick = onClick
     ) {
         Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = iconRes),
+                painter = painterResource(iconRes),
                 contentDescription = title,
                 modifier = Modifier.size(36.dp)
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(Modifier.width(12.dp))
             Text(
                 text = title,
                 fontWeight = FontWeight.Bold,

@@ -45,10 +45,12 @@ sealed class Screen(val route: String) {
     }
 
     // Duty expects two path params
-    object Duty : Screen("duty_module_screen") {
-        fun createRoute(userId: Int, nama: String) =
-            "duty_module_screen/$userId/${Uri.encode(nama)}"
+    object Duty : Screen("duty/{userId}/{namaLogin}") {
+        fun createRoute(userId: Int, namaLogin: String): String {
+            return "duty/$userId/${Uri.encode(namaLogin)}"
+        }
     }
+
 
     object Report : Screen("report_screen")
 
@@ -172,22 +174,23 @@ fun NavGraph(navController: NavHostController) {
         // DUTY - use exact route from sealed class
         // ========================
         composable(
-            route = "duty_module_screen/{userId}/{nama}",
+            route = Screen.Duty.route,
             arguments = listOf(
                 navArgument("userId") { type = NavType.IntType },
-                navArgument("nama") { type = NavType.StringType }
+                navArgument("namaLogin") { type = NavType.StringType }
             )
         ) { backStackEntry ->
 
-            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-            val nama = backStackEntry.arguments?.getString("nama") ?: ""
+            val userId = backStackEntry.arguments?.getInt("userId") ?: return@composable
+            val namaLogin = backStackEntry.arguments?.getString("namaLogin") ?: "User"
 
             DutyModuleScreen(
                 navController = navController,
                 userId = userId,
-                namaLogin = nama  // <-- ini yang tadinya bikin error
+                namaLogin = namaLogin
             )
         }
+
 
 
 

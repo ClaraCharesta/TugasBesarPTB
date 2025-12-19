@@ -65,6 +65,8 @@ fun BelumDikerjakanScreen(
     var photoUri by remember { mutableStateOf<Uri?>(null) }
     var imageFile by remember { mutableStateOf<File?>(null) }
     var bitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    val isFotoAda = bitmap != null
+
 
     // ===================== AMBIL FOTO =====================
     val takePhotoLauncher = rememberLauncherForActivityResult(
@@ -252,11 +254,19 @@ fun BelumDikerjakanScreen(
 
                 Button(
                     onClick = { uploadToBackend() },
-                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                    enabled = isFotoAda, // 🔥 LOGIKA UTAMA
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isFotoAda) buttonColor else Color.Gray,
+                        disabledContainerColor = Color.Gray
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Tandai Selesai", color = Color.White)
+                    Text(
+                        text = if (isFotoAda) "Tandai Selesai" else "Ambil Foto Terlebih Dahulu",
+                        color = Color.White
+                    )
                 }
+
             }
         }
     }
