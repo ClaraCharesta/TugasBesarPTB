@@ -26,12 +26,19 @@ import androidx.navigation.NavController
 import com.example.asramaku.R
 import com.example.asramaku.data.local.TokenManager
 import com.example.asramaku.navigation.Screen
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
+import com.example.asramaku.data.remote.FcmPiketApi
+import com.example.asramaku.data.remote.FcmPiketRequest
+import com.example.asramaku.data.remote.FcmPiketService
+
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun LoginScreen(navController: NavController, vm: LoginViewModel = viewModel()) {
-
+fun LoginScreen(
+    navController: NavController,
+    vm: LoginViewModel = viewModel()
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val tokenManager = remember { TokenManager(context) }
@@ -39,7 +46,7 @@ fun LoginScreen(navController: NavController, vm: LoginViewModel = viewModel()) 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }   // ✅ TAMBAHAN SAJA
+    var isLoading by remember { mutableStateOf(false) }
 
     val backgroundColor = Color(0xFFFFE7C2)
     val darkButtonColor = Color(0xFF2D6A6A)
@@ -58,26 +65,31 @@ fun LoginScreen(navController: NavController, vm: LoginViewModel = viewModel()) 
     }
 
     Box(
-        modifier = Modifier.fillMaxSize().background(backgroundColor),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundColor),
         contentAlignment = Alignment.Center
     ) {
-
         Column(
-            modifier = Modifier.fillMaxWidth().verticalScroll(scrollState).padding(vertical = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
+                .padding(vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // ======================= LOGO =======================
+            // ================= LOGO =================
             AnimatedVisibility(visible = showLogo, enter = fadeIn(), exit = fadeOut()) {
                 Image(
                     painter = painterResource(id = R.drawable.school_icon),
                     contentDescription = "Login",
-                    modifier = Modifier.size(200.dp).padding(bottom = 30.dp)
+                    modifier = Modifier
+                        .size(200.dp)
+                        .padding(bottom = 30.dp)
                 )
             }
 
-            // ======================= FORM INPUT =======================
+            // ================= FORM =================
             AnimatedVisibility(visible = showForm, enter = fadeIn(), exit = fadeOut()) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
@@ -86,7 +98,9 @@ fun LoginScreen(navController: NavController, vm: LoginViewModel = viewModel()) 
                         onValueChange = { email = it },
                         label = { Text("Email") },
                         singleLine = true,
-                        modifier = Modifier.padding(horizontal = 40.dp).fillMaxWidth(0.85f)
+                        modifier = Modifier
+                            .padding(horizontal = 40.dp)
+                            .fillMaxWidth(0.85f)
                     )
 
                     OutlinedTextField(
@@ -95,71 +109,97 @@ fun LoginScreen(navController: NavController, vm: LoginViewModel = viewModel()) 
                         label = { Text("Password") },
                         singleLine = true,
                         visualTransformation =
-                            if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            if (passwordVisible) VisualTransformation.None
+                            else PasswordVisualTransformation(),
                         trailingIcon = {
                             Icon(
                                 painter = painterResource(
-                                    if (passwordVisible) R.drawable.ic_visibility_off
-                                    else R.drawable.ic_visibility
+                                    if (passwordVisible)
+                                        R.drawable.ic_visibility_off
+                                    else
+                                        R.drawable.ic_visibility
                                 ),
                                 contentDescription = null,
-                                modifier = Modifier.size(22.dp).clickable {
-                                    passwordVisible = !passwordVisible
-                                }
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .clickable { passwordVisible = !passwordVisible }
                             )
                         },
                         modifier = Modifier
                             .padding(horizontal = 40.dp, vertical = 8.dp)
                             .fillMaxWidth(0.85f)
                     )
-
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ======================= BUTTON LOGIN =======================
+            // ================= BUTTON =================
             AnimatedVisibility(visible = showButtons, enter = fadeIn(), exit = fadeOut()) {
-
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
                     Button(
+                        enabled = !isLoading,
+                        colors = ButtonDefaults.buttonColors(containerColor = darkButtonColor),
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .height(50.dp),
                         onClick = {
-                            if (isLoading) return@Button   // ✅ CEGAH DOUBLE KLIK
+                            if (isLoading) return@Button
                             isLoading = true
 
-                            vm.login(email, password) { success, userId, userName, tokenOrMessage ->
-
+                            vm.login(email, password) { success, userId, userName, messageOrToken ->
                                 isLoading = false
 
                                 if (success) {
-                                    val token = tokenOrMessage
-
                                     scope.launch {
                                         tokenManager.saveSession(
-                                            token = token,
+                                            token = messageOrToken,
                                             userId = userId,
                                             userName = userName
                                         )
+
+                                        // 🔥 AMBIL FCM TOKEN KHUSUS PIKET
+                                        FirebaseMessaging.getInstance().token
+                                            .addOnSuccessListener { fcmToken ->
+                                                scope.launch {
+                                                    try {
+                                                        FcmPiketService.api.sendToken(
+                                                            FcmPiketRequest(
+                                                                userId = userId,
+                                                                fcmToken = fcmToken
+                                                            )
+                                                        )
+                                                    } catch (e: Exception) {
+                                                        e.printStackTrace()
+                                                    }
+                                                }
+                                            }
+
                                     }
 
-                                    Toast.makeText(context, "Login sukses", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Login sukses",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
 
                                     navController.navigate(
-                                        "home_screen/$userId/$userName"   // ✅ FIX ROUTE
+                                        "home_screen/$userId/$userName"
                                     ) {
-                                        popUpTo(Screen.Login.route) { inclusive = true }
+                                        popUpTo(Screen.Login.route) {
+                                            inclusive = true
+                                        }
                                     }
-
                                 } else {
-                                    Toast.makeText(context, tokenOrMessage, Toast.LENGTH_SHORT).show()
-
+                                    Toast.makeText(
+                                        context,
+                                        messageOrToken,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
-                            }
-                        },
-                        enabled = !isLoading,   // ✅ TOMBOL TERKUNCI SAAT LOGIN
-                        colors = ButtonDefaults.buttonColors(containerColor = darkButtonColor),
-                        modifier = Modifier.fillMaxWidth(0.85f).height(50.dp)
+                        }
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
@@ -168,16 +208,30 @@ fun LoginScreen(navController: NavController, vm: LoginViewModel = viewModel()) 
                                 color = Color.White
                             )
                         } else {
-                            Text("LOGIN", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = "LOGIN",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
 
                     Button(
-                        onClick = { if (!isLoading) navController.navigate(Screen.SignUp.route) },
+                        onClick = {
+                            if (!isLoading) {
+                                navController.navigate(Screen.SignUp.route)
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = lightButtonColor),
-                        modifier = Modifier.fillMaxWidth(0.85f).height(50.dp)
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .height(50.dp)
                     ) {
-                        Text("SIGN UP", color = textColor, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "SIGN UP",
+                            color = textColor,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
