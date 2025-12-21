@@ -6,8 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,26 +15,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.asramaku.navigation.Screen
 import com.example.asramaku.ui.theme.*
-import com.example.asramaku.data.preferences.UserPreferences
-import androidx.compose.ui.platform.LocalContext
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.io.IOException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportScreen(
     navController: NavController,
+    userId: Int,          // ✅ FIX FINAL
     userName: String?
 ) {
-    val context = LocalContext.current
-    val userPrefs = remember { UserPreferences(context) }
-    val storedName = userPrefs.getName()
 
-    // pilih nama mana yang dipakai
-    val displayName = when {
-        !userName.isNullOrBlank() -> userName
-        !storedName.isNullOrBlank() -> storedName
-        else -> "User"
+    // ===============================
+    // 🔔 NOTIF REPORT SAAT MASUK HALAMAN
+    // ===============================
+    LaunchedEffect(Unit) {
+        if (userId != 0) {
+            sendReportNotification(userId)
+        }
     }
 
     Scaffold(
@@ -76,8 +77,7 @@ fun ReportScreen(
             Text(
                 text = "Silakan laporkan jika terjadi kerusakan, terima kasih",
                 fontSize = 14.sp,
-                color = DarkTeal,
-                modifier = Modifier.padding(top = 4.dp)
+                color = DarkTeal
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -110,9 +110,7 @@ fun MenuCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = DarkTeal
-        )
+        colors = CardDefaults.cardColors(containerColor = DarkTeal)
     ) {
         Row(
             modifier = Modifier
@@ -121,28 +119,34 @@ fun MenuCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = Color.White,
-                    modifier = Modifier.size(28.dp)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = title, tint = Color.White)
                 Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White
-                )
+                Text(title, color = Color.White)
             }
-            Text(
-                text = "Buka",
-                fontSize = 14.sp,
-                color = LightYellow
-            )
+            Text("Buka", color = LightYellow)
         }
     }
+}
+
+// =================================================
+// 🔥 FUNCTION KIRIM NOTIF REPORT KE BACKEND
+// =================================================
+private fun sendReportNotification(userId: Int) {
+    val json = JSONObject().apply {
+        put("userId", userId)
+    }
+
+    val body = json.toString()
+        .toRequestBody("application/json; charset=utf-8".toMediaType())
+
+    val request = Request.Builder()
+        .url("http://10.0.2.2:3000/api/fcm/report/send")
+        .post(body)
+        .build()
+
+    OkHttpClient().newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {}
+        override fun onResponse(call: Call, response: Response) {}
+    })
 }

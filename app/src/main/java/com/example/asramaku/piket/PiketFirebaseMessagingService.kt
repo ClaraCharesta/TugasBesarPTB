@@ -24,9 +24,11 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
     // ===============================
     private val PIKET_CHANNEL_ID = "piket_channel_v2"
     private val PAYMENT_CHANNEL_ID = "payment_channel"
+    private val REPORT_CHANNEL_ID = "report_channel"
 
     private val PIKET_CHANNEL_NAME = "Reminder Piket"
     private val PAYMENT_CHANNEL_NAME = "Payment Notifications"
+    private val REPORT_CHANNEL_NAME = "Report Notifications"
 
     // ===============================
     // 📩 TERIMA SEMUA FCM
@@ -39,6 +41,7 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
         when (type) {
             "PIKET" -> handlePiketNotification()
             "PAYMENT", "PAYMENT_REMINDER" -> handlePaymentNotification(message)
+            "REPORT" -> handleReportNotification(message)
             else -> Log.d("FCM_RECEIVED", "Tipe notif tidak dikenali")
         }
     }
@@ -107,6 +110,43 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     // ===============================
+    // 🧾 NOTIF REPORT (BARU, TANPA GANGGU YANG LAIN)
+    // ===============================
+    private fun handleReportNotification(message: RemoteMessage) {
+        createReportChannel()
+
+        val title = message.notification?.title ?: "Laporan Kerusakan"
+        val body =
+            message.notification?.body
+                ?: "Apakah ada barang yang rusak? Silakan buat data laporan baru yaa 📝"
+
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            System.currentTimeMillis().toInt(),
+            intent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, REPORT_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_report)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(System.currentTimeMillis().toInt(), notification)
+
+        Log.d("FCM_REPORT", "Notif REPORT tampil")
+    }
+
+    // ===============================
     // 🔧 CHANNEL PIKET
     // ===============================
     private fun createPiketChannel() {
@@ -140,6 +180,25 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
                     NotificationManager.IMPORTANCE_HIGH
                 ).apply {
                     description = "Channel untuk notifikasi pembayaran"
+                }
+                manager.createNotificationChannel(channel)
+            }
+        }
+    }
+
+    // ===============================
+    // 🔧 CHANNEL REPORT (BARU)
+    // ===============================
+    private fun createReportChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (manager.getNotificationChannel(REPORT_CHANNEL_ID) == null) {
+                val channel = NotificationChannel(
+                    REPORT_CHANNEL_ID,
+                    REPORT_CHANNEL_NAME,
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Channel untuk notifikasi laporan kerusakan"
                 }
                 manager.createNotificationChannel(channel)
             }

@@ -52,7 +52,10 @@ sealed class Screen(val route: String) {
     }
 
 
-    object Report : Screen("report_screen")
+    object Report : Screen("report_screen/{userId}/{userName}") {
+        fun createRoute(userId: Int, userName: String) = "report_screen/$userId/$userName"
+    }
+
 
 
     object JadwalPiket : Screen("jadwal_piket_screen/{userId}/{nama}") {
@@ -321,9 +324,22 @@ fun NavGraph(navController: NavHostController) {
         // ========================
 
 
-        composable(route = Screen.Report.route) {
-            ReportScreen(navController, userName = null)
+
+
+        composable(
+            route = "report_screen/{userId}/{userName}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.IntType },
+                navArgument("userName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+            val userName = backStackEntry.arguments?.getString("userName")
+            ReportScreen(navController, userId, userName)
         }
+
+
+
 
         // ============================
         // MODUL PEMBAYARAN

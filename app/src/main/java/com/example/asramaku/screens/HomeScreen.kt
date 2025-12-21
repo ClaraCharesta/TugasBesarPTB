@@ -159,8 +159,9 @@ fun HomeScreen(
                         backgroundColor = moduleButtonColor2,
                         textColor = textColor
                     ) {
-                        navController.navigate(Screen.Report.route)
+                        navController.navigate(Screen.Report.createRoute(userId, displayName ?: "User"))
                     }
+
 
                     // 🔹 PIKET (✅ BENAR → DUTY MODULE)
                     ModuleItem(

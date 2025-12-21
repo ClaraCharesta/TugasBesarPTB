@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -163,10 +162,14 @@ fun LoginScreen(
                                         )
 
                                         // ===============================
-                                        // 🔹 FCM TOKEN PIKET (TIDAK DIUBAH)
+                                        // 🔹 AMBIL FCM TOKEN
                                         // ===============================
                                         FirebaseMessaging.getInstance().token
                                             .addOnSuccessListener { fcmToken ->
+
+                                                // ===============================
+                                                // 🔹 TOKEN PIKET (TETAP)
+                                                // ===============================
                                                 scope.launch {
                                                     try {
                                                         FcmPiketService.api.sendToken(
@@ -181,10 +184,14 @@ fun LoginScreen(
                                                 }
 
                                                 // ===============================
-                                                // 🔥 TAMBAHAN: FCM TOKEN PAYMENT
-                                                // (AMAN, TIDAK GANGGU PIKET)
+                                                // 💰 TOKEN PAYMENT
                                                 // ===============================
                                                 sendPaymentToken(userId, fcmToken)
+
+                                                // ===============================
+                                                // 🧾 TOKEN REPORT (BARU)
+                                                // ===============================
+                                                sendReportToken(userId, fcmToken)
                                             }
                                     }
 
@@ -250,7 +257,7 @@ fun LoginScreen(
 }
 
 // =================================================
-// 🔥 FUNCTION KHUSUS PAYMENT (DI LUAR COMPOSABLE)
+// 🔥 FUNCTION KHUSUS PAYMENT
 // =================================================
 private fun sendPaymentToken(userId: Int, token: String) {
     val json = JSONObject().apply {
@@ -263,6 +270,29 @@ private fun sendPaymentToken(userId: Int, token: String) {
 
     val request = Request.Builder()
         .url("http://10.0.2.2:3000/api/fcm/payment/token")
+        .post(body)
+        .build()
+
+    OkHttpClient().newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {}
+        override fun onResponse(call: Call, response: Response) {}
+    })
+}
+
+// =================================================
+// 🧾 FUNCTION KHUSUS REPORT (BARU)
+// =================================================
+private fun sendReportToken(userId: Int, token: String) {
+    val json = JSONObject().apply {
+        put("userId", userId)
+        put("fcmToken", token)
+    }
+
+    val body = json.toString()
+        .toRequestBody("application/json; charset=utf-8".toMediaType())
+
+    val request = Request.Builder()
+        .url("http://10.0.2.2:3000/api/fcm/report/token")
         .post(body)
         .build()
 
