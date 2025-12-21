@@ -17,20 +17,47 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.asramaku.data.model.Payment
-
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun PaymentModuleScreen(
     navController: NavController,
     viewModel: PaymentViewModel,
-    userId: Int // 🔹 ambil userId dari parameter
+    userId: Int
 ) {
-
     val tagihanList by viewModel.tagihanList.collectAsState()
 
+    // 🔹 Load tagihan dan kirim reminder saat screen dibuka
     LaunchedEffect(userId) {
         if (userId != 0) {
+            // Pastikan tagihan di-load dulu
             viewModel.loadTagihan(userId)
+
+            // 🔹 Tunggu perubahan tagihanList, dan hanya kirim jika ada pending
+            snapshotFlow { tagihanList }
+                .distinctUntilChanged() // hanya reaksi saat list berubah
+                .collectLatest { list ->
+                    val hasPending = list.any { it.status.lowercase() != "lunas" }
+                    if (hasPending) {
+                        sendPaymentReminder(userId)
+                        android.util.Log.d(
+                            "FCM_REMINDER",
+                            "Ada tagihan pending, mengirim notifikasi"
+                        )
+                    } else {
+                        android.util.Log.d(
+                            "FCM_REMINDER",
+                            "Tidak ada tagihan pending, tidak mengirim notifikasi"
+                        )
+                    }
+                }
         }
     }
 
@@ -39,9 +66,8 @@ fun PaymentModuleScreen(
             .fillMaxSize()
             .background(Color(0xFFFFF0D5))
     ) {
-
         // =========================
-        // TOP BAR (PANAH BACK)
+        // TOP BAR
         // =========================
         Row(
             modifier = Modifier
@@ -73,7 +99,6 @@ fun PaymentModuleScreen(
                 .padding(horizontal = 16.dp)
                 .weight(1f)
         ) {
-
             if (tagihanList.isEmpty()) {
                 Text("Tidak ada tagihan.")
             } else {
@@ -97,12 +122,39 @@ fun PaymentModuleScreen(
         // =========================
         // BOTTOM NAVIGATION
         // =========================
-        BottomNavigationBar(
-            navController = navController,
-            userId = userId
-        )
-
+        BottomNavigationBar(navController, userId)
     }
+}
+
+// 🔹 Fungsi untuk mengirim reminder ke backend FCM Payment
+private fun sendPaymentReminder(userId: Int) {
+    val client = OkHttpClient.Builder()
+        .callTimeout(60, TimeUnit.SECONDS)
+        .build()
+
+    val json = org.json.JSONObject().apply { put("userId", userId) }
+    val body = json.toString().toRequestBody("application/json; charset=utf-8".toMediaType())
+    val request = Request.Builder()
+        .url("http://10.0.2.2:3000/api/fcm/payment/reminder")
+
+
+        .post(body)
+        .build()
+
+    // 🔹 Gunakan enqueue agar asynchronous
+    client.newCall(request).enqueue(object : okhttp3.Callback {
+        override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
+            android.util.Log.e("FCM_REMINDER", "Exception: ${e.message}")
+        }
+
+        override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+            if (response.isSuccessful) {
+                android.util.Log.d("FCM_REMINDER", "✅ Reminder dikirim")
+            } else {
+                android.util.Log.e("FCM_REMINDER", "❌ Gagal kirim reminder: ${response.message}")
+            }
+        }
+    })
 }
 
 @Composable
@@ -116,7 +168,6 @@ fun TagihanCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
             Text(
                 text = "Bulan tagihan : ${payment.bulan}",
                 style = MaterialTheme.typography.bodyLarge
@@ -132,7 +183,6 @@ fun TagihanCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-
                 val isDisabled = payment.buktiBayar != null
 
                 Button(
@@ -154,10 +204,7 @@ fun BottomNavigationBar(
     navController: NavController,
     userId: Int
 ) {
-    NavigationBar(
-        containerColor = Color(0xFFF3E6F7)
-    ) {
-
+    NavigationBar(containerColor = Color(0xFFF3E6F7)) {
         NavigationBarItem(
             selected = true,
             onClick = { },
@@ -167,23 +214,16 @@ fun BottomNavigationBar(
 
         NavigationBarItem(
             selected = false,
-            onClick = {
-                navController.navigate("status_pembayaran/$userId")
-            },
+            onClick = { navController.navigate("status_pembayaran/$userId") },
             icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Status") },
             label = { Text("Status") }
         )
 
-
-
         NavigationBarItem(
             selected = false,
-            onClick = {
-                navController.navigate("riwayat_pembayaran/$userId")
-            },
+            onClick = { navController.navigate("riwayat_pembayaran/$userId") },
             icon = { Icon(Icons.Default.History, contentDescription = "Riwayat") },
             label = { Text("Riwayat") }
         )
-
     }
 }

@@ -28,10 +28,13 @@ import com.example.asramaku.data.local.TokenManager
 import com.example.asramaku.navigation.Screen
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
-import com.example.asramaku.data.remote.FcmPiketApi
 import com.example.asramaku.data.remote.FcmPiketRequest
 import com.example.asramaku.data.remote.FcmPiketService
-
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.io.IOException
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -159,7 +162,9 @@ fun LoginScreen(
                                             userName = userName
                                         )
 
-                                        // 🔥 AMBIL FCM TOKEN KHUSUS PIKET
+                                        // ===============================
+                                        // 🔹 FCM TOKEN PIKET (TIDAK DIUBAH)
+                                        // ===============================
                                         FirebaseMessaging.getInstance().token
                                             .addOnSuccessListener { fcmToken ->
                                                 scope.launch {
@@ -174,8 +179,13 @@ fun LoginScreen(
                                                         e.printStackTrace()
                                                     }
                                                 }
-                                            }
 
+                                                // ===============================
+                                                // 🔥 TAMBAHAN: FCM TOKEN PAYMENT
+                                                // (AMAN, TIDAK GANGGU PIKET)
+                                                // ===============================
+                                                sendPaymentToken(userId, fcmToken)
+                                            }
                                     }
 
                                     Toast.makeText(
@@ -237,4 +247,27 @@ fun LoginScreen(
             }
         }
     }
+}
+
+// =================================================
+// 🔥 FUNCTION KHUSUS PAYMENT (DI LUAR COMPOSABLE)
+// =================================================
+private fun sendPaymentToken(userId: Int, token: String) {
+    val json = JSONObject().apply {
+        put("userId", userId)
+        put("fcmToken", token)
+    }
+
+    val body = json.toString()
+        .toRequestBody("application/json; charset=utf-8".toMediaType())
+
+    val request = Request.Builder()
+        .url("http://10.0.2.2:3000/api/fcm/payment/token")
+        .post(body)
+        .build()
+
+    OkHttpClient().newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {}
+        override fun onResponse(call: Call, response: Response) {}
+    })
 }

@@ -19,23 +19,40 @@ import com.google.firebase.messaging.RemoteMessage
 
 class PiketFirebaseMessagingService : FirebaseMessagingService() {
 
-    private val CHANNEL_ID = "piket_channel_v2" // versi baru supaya pasti dibuat ulang
-    private val CHANNEL_NAME = "Reminder Piket"
+    // ===============================
+    // 🔔 CHANNEL
+    // ===============================
+    private val PIKET_CHANNEL_ID = "piket_channel_v2"
+    private val PAYMENT_CHANNEL_ID = "payment_channel"
 
+    private val PIKET_CHANNEL_NAME = "Reminder Piket"
+    private val PAYMENT_CHANNEL_NAME = "Payment Notifications"
+
+    // ===============================
+    // 📩 TERIMA SEMUA FCM
+    // ===============================
     override fun onMessageReceived(message: RemoteMessage) {
-        Log.d("FCM_RECEIVED_PIKET", "Pesan diterima: ${message.data}")
+        Log.d("FCM_RECEIVED", "Pesan diterima: ${message.data}")
 
         val type = message.data["type"]
-        if (type != "PIKET") {
-            Log.d("FCM_RECEIVED_PIKET", "Bukan notif PIKET, diabaikan")
-            return
-        }
 
-        createChannel()
+        when (type) {
+            "PIKET" -> handlePiketNotification()
+            "PAYMENT", "PAYMENT_REMINDER" -> handlePaymentNotification(message)
+            else -> Log.d("FCM_RECEIVED", "Tipe notif tidak dikenali")
+        }
+    }
+
+    // ===============================
+    // 🔵 NOTIF PIKET (ASLI, TIDAK DIRUSAK)
+    // ===============================
+    private fun handlePiketNotification() {
+        createPiketChannel()
 
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
+
         val pendingIntent = PendingIntent.getActivity(
             this,
             System.currentTimeMillis().toInt(),
@@ -45,8 +62,8 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
 
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_duty) // pakai ic_duty
+        val notification = NotificationCompat.Builder(this, PIKET_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_duty)
             .setContentTitle("Reminder Piket")
             .setContentText("Jangan lupa cek jadwal piket hari ini yaa 🤍")
             .setAutoCancel(true)
@@ -56,42 +73,84 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
-        // Toast aman di main thread
         Handler(Looper.getMainLooper()).post {
             Toast.makeText(this, "Notif PIKET diterima!", Toast.LENGTH_SHORT).show()
         }
 
-        Log.d("FCM_NOTIF_DEBUG", "Notification ready: ${notification.extras}")
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(System.currentTimeMillis().toInt(), notification)
+
         Log.d("FCM_NOTIF_DEBUG", "Notif PIKET tampil")
     }
 
-    private fun createChannel() {
+    // ===============================
+    // 💰 NOTIF PAYMENT (BARU, AMAN)
+    // ===============================
+    private fun handlePaymentNotification(message: RemoteMessage) {
+        createPaymentChannel()
+
+        val title = message.notification?.title ?: "Tagihan Pembayaran"
+        val body = message.notification?.body ?: "Ada tagihan yang belum dibayar"
+
+        val notification = NotificationCompat.Builder(this, PAYMENT_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_payment)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(System.currentTimeMillis().toInt(), notification)
+
+        Log.d("FCM_PAYMENT", "Notif PAYMENT tampil")
+    }
+
+    // ===============================
+    // 🔧 CHANNEL PIKET
+    // ===============================
+    private fun createPiketChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val existingChannel = manager.getNotificationChannel(CHANNEL_ID)
-            if (existingChannel == null) {
+            if (manager.getNotificationChannel(PIKET_CHANNEL_ID) == null) {
                 val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    CHANNEL_NAME,
+                    PIKET_CHANNEL_ID,
+                    PIKET_CHANNEL_NAME,
                     NotificationManager.IMPORTANCE_HIGH
                 ).apply {
                     description = "Channel untuk pengingat jadwal piket"
-                    enableLights(true)
                     enableVibration(true)
                     vibrationPattern = longArrayOf(0, 500, 250, 500)
                 }
                 manager.createNotificationChannel(channel)
-                Log.d("FCM_NOTIF_DEBUG", "Channel PIKET dibuat (v2)")
-            } else {
-                Log.d("FCM_NOTIF_DEBUG", "Channel PIKET sudah ada (v2)")
             }
         }
     }
 
+    // ===============================
+    // 🔧 CHANNEL PAYMENT
+    // ===============================
+    private fun createPaymentChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (manager.getNotificationChannel(PAYMENT_CHANNEL_ID) == null) {
+                val channel = NotificationChannel(
+                    PAYMENT_CHANNEL_ID,
+                    PAYMENT_CHANNEL_NAME,
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Channel untuk notifikasi pembayaran"
+                }
+                manager.createNotificationChannel(channel)
+            }
+        }
+    }
+
+    // ===============================
+    // 🔑 TOKEN PIKET (TETAP)
+    // ===============================
     override fun onNewToken(token: String) {
         Log.d("FCM_NEW_TOKEN_PIKET", "Token baru: $token")
-        // Kirim token baru ke backend khusus PIKET
+        // token piket tetap seperti sebelumnya
     }
 }
