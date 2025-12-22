@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -24,8 +24,8 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.asramaku.R
 import com.example.asramaku.component.RekeningCard
-import com.example.asramaku.screens.PaymentViewModel
 import com.example.asramaku.navigation.Screen
+import com.example.asramaku.screens.PaymentViewModel
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,7 +39,6 @@ fun KonfirmasiPembayaranScreen(
 ) {
     val context = LocalContext.current
 
-    // ================= STATE =================
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     var showSuccessPopup by remember { mutableStateOf(false) }
@@ -50,13 +49,12 @@ fun KonfirmasiPembayaranScreen(
     val successMsg by viewModel.successMessage.collectAsState()
     val errorMsg by viewModel.errorMessage.collectAsState()
 
-
+    // ===== IMAGE PICKER =====
     val pickImageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) selectedImageUri = uri
     }
-
 
     val tempCameraUri = remember { mutableStateOf<Uri?>(null) }
 
@@ -85,17 +83,13 @@ fun KonfirmasiPembayaranScreen(
     }
 
 
-    Scaffold(
-        bottomBar = { PaymentBottomBarKonfirmasi(navController) }
-    ) { padding ->
-
+    Scaffold { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
                 .background(Color(0xFFFFF0D5))
         ) {
-
 
             TopAppBar(
                 title = { Text("Lakukan Pembayaran") },
@@ -108,7 +102,6 @@ fun KonfirmasiPembayaranScreen(
                     containerColor = Color(0xFFAED6D3)
                 )
             )
-
 
             Column(
                 modifier = Modifier
@@ -150,7 +143,6 @@ fun KonfirmasiPembayaranScreen(
                     Text("Pilih Foto / Kamera")
                 }
 
-
                 selectedImageUri?.let {
                     Image(
                         painter = rememberAsyncImagePainter(it),
@@ -162,13 +154,10 @@ fun KonfirmasiPembayaranScreen(
                     )
                 }
 
-                Spacer(Modifier.height(16.dp))
-
                 Row(
-                    Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-
 
                     Button(
                         onClick = {
@@ -206,8 +195,6 @@ fun KonfirmasiPembayaranScreen(
                 if (errorMsg.isNotEmpty()) {
                     Text(errorMsg, color = Color.Red)
                 }
-
-                Spacer(Modifier.height(70.dp))
             }
         }
     }
@@ -218,10 +205,7 @@ fun KonfirmasiPembayaranScreen(
             onDismissRequest = { showDialog = false },
             title = { Text("Pilih Metode Upload") },
             text = {
-                Column(
-                    Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = {
                             pickImageLauncher.launch("image/*")
@@ -268,41 +252,6 @@ fun KonfirmasiPembayaranScreen(
                     Text("OK")
                 }
             }
-        )
-    }
-}
-
-
-@Composable
-fun PaymentBottomBarKonfirmasi(navController: NavController) {
-    NavigationBar(containerColor = Color(0xFFF3E6F7)) {
-
-        NavigationBarItem(
-            selected = false,
-            onClick = { navController.navigate("payment_screen") },
-            icon = { Icon(Icons.Default.List, contentDescription = null) },
-            label = { Text("Tagihan") }
-        )
-
-        NavigationBarItem(
-            selected = true,
-            onClick = {},
-            icon = { Icon(Icons.Default.PhotoCamera, contentDescription = null) },
-            label = { Text("Konfirmasi") }
-        )
-
-        NavigationBarItem(
-            selected = false,
-            onClick = { navController.navigate("status_pembayaran") },
-            icon = { Icon(Icons.Default.CheckCircle, contentDescription = null) },
-            label = { Text("Status") }
-        )
-
-        NavigationBarItem(
-            selected = false,
-            onClick = { navController.navigate("riwayat_pembayaran") },
-            icon = { Icon(Icons.Default.History, contentDescription = null) },
-            label = { Text("Riwayat") }
         )
     }
 }
