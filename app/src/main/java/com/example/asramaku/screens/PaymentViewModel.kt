@@ -24,23 +24,23 @@ class PaymentViewModel(
     private val api: ApiService
 ) : ViewModel() {
 
-    // ================= TAGIHAN =================
+
     private val _tagihanList = MutableStateFlow<List<Payment>>(emptyList())
     val tagihanList = _tagihanList.asStateFlow()
 
-    // ================= STATUS =================
+
     private val _statusList = MutableStateFlow<List<Payment>>(emptyList())
     val statusList = _statusList.asStateFlow()
 
-    // ================= RIWAYAT (LUNAS) =================
+
     private val _riwayatLunasList = MutableStateFlow<List<Payment>>(emptyList())
     val riwayatLunasList = _riwayatLunasList.asStateFlow()
 
-    // ================= DETAIL =================
+
     private val _detailPayment = MutableStateFlow<Payment?>(null)
     val detailPayment = _detailPayment.asStateFlow()
 
-    // ================= STATE =================
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
@@ -50,9 +50,7 @@ class PaymentViewModel(
     private val _errorMessage = MutableStateFlow("")
     val errorMessage = _errorMessage.asStateFlow()
 
-    // =====================================================
-    // 🔹 UTIL: URI → FILE (WAJIB UNTUK MULTIPART)
-    // =====================================================
+
     private fun uriToFile(context: Context, uri: Uri): File {
         val inputStream = context.contentResolver.openInputStream(uri)
         val file = File(context.cacheDir, "bukti_${System.currentTimeMillis()}.jpg")
@@ -62,9 +60,7 @@ class PaymentViewModel(
         return file
     }
 
-    // =====================================================
-    // 🔹 UTIL TAMPIL FOTO BASE64 (OPSIONAL / LEGACY)
-    // =====================================================
+
     fun base64ToBitmap(base64: String?): Bitmap? {
         return try {
             if (base64.isNullOrEmpty()) return null
@@ -75,7 +71,7 @@ class PaymentViewModel(
         }
     }
 
-    // ================= TAGIHAN =================
+
     fun loadTagihan(userId: Int) {
         viewModelScope.launch {
             try {
@@ -89,7 +85,7 @@ class PaymentViewModel(
         }
     }
 
-    // ================= STATUS =================
+
     fun loadAllStatus(userId: Int) {
         viewModelScope.launch {
             try {
@@ -103,7 +99,7 @@ class PaymentViewModel(
         }
     }
 
-    // ================= RIWAYAT =================
+
     fun loadRiwayatLunas(userId: Int) {
         viewModelScope.launch {
             try {
@@ -117,7 +113,7 @@ class PaymentViewModel(
         }
     }
 
-    // ================= DELETE =================
+
     fun deletePayment(paymentId: Int, userId: Int) {
         viewModelScope.launch {
             try {
@@ -134,7 +130,7 @@ class PaymentViewModel(
         }
     }
 
-    // ================= DETAIL =================
+
     fun getDetailPayment(paymentId: Int) = liveData {
         try {
             val response = api.getPaymentDetail(paymentId)
@@ -150,9 +146,7 @@ class PaymentViewModel(
 
 
 
-    // =====================================================
-    // 🔥 SUBMIT PEMBAYARAN (FIX MULTER)
-    // =====================================================
+
     fun submitPayment(
         context: Context,
         userId: Int,

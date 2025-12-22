@@ -52,7 +52,7 @@ fun DetailPiketSayaScreen(
     val scope = rememberCoroutineScope()
     val formatterDisplay = DateTimeFormatter.ofPattern("dd - MM - yyyy")
 
-    // ===================== FETCH DATA =====================
+
     LaunchedEffect(effectiveUserId, tanggal) {
         scope.launch {
             try {
@@ -104,7 +104,7 @@ fun DetailPiketSayaScreen(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // ===================== HEADER =====================
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -142,7 +142,7 @@ fun DetailPiketSayaScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // ===================== FOTO =====================
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()

@@ -53,7 +53,7 @@ fun BelumDikerjakanScreen(
     tanggal: LocalDate
 ) {
 
-    // ===================== WARNA =====================
+
     val backgroundColor = Color(0xFFFFE7C2)
     val cardColor = Color(0xFF9DBEBB)
     val buttonColor = Color(0xFF325B5C)
@@ -68,7 +68,7 @@ fun BelumDikerjakanScreen(
     val isFotoAda = bitmap != null
 
 
-    // ===================== AMBIL FOTO =====================
+
     val takePhotoLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
@@ -104,7 +104,7 @@ fun BelumDikerjakanScreen(
         }
     }
 
-    // ===================== UPLOAD KE BACKEND =====================
+
     fun uploadToBackend() {
         if (imageFile == null) {
             scope.launch {
@@ -157,7 +157,7 @@ fun BelumDikerjakanScreen(
         })
     }
 
-    // ===================== UI =====================
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -272,7 +272,7 @@ fun BelumDikerjakanScreen(
     }
 }
 
-// ===================== CREATE FILE =====================
+
 fun createImageFile(context: Context): File {
     return File.createTempFile(
         "piket_${UUID.randomUUID()}",

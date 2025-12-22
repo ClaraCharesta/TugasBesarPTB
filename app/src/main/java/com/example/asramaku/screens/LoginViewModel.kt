@@ -21,25 +21,25 @@ class LoginViewModel : ViewModel() {
             try {
                 val response = repo.login(email, password)
 
-                // pastikan sukses *dan* body != null
+
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
 
-                    // aman: gunakan fallback jika field null
+
                     val userId = body.user?.id ?: 0
                     val userName = body.user?.name ?: ""
                     val token = body.token ?: ""
 
-                    // debug log (cek di Logcat)
+
                     println("LOGIN OK — token=${token}, userId=${userId}, userName=${userName}")
 
-                    // kirim hasil sukses
+
                     onResult(true, userId, userName, token)
 
-                    // HENTIKAN eksekusi coroutine setelah sukses
+
                     return@launch
                 } else {
-                    // ambil pesan error dari server bila ada
+
                     val err = try {
                         response.errorBody()?.string() ?: "Email atau password salah"
                     } catch (_: Exception) {
@@ -50,7 +50,7 @@ class LoginViewModel : ViewModel() {
                 }
 
             } catch (e: Exception) {
-                // cetak stacktrace ke Logcat supaya bisa dilihat
+
                 e.printStackTrace()
                 onResult(false, 0, "", "Tidak dapat terhubung ke server")
                 return@launch

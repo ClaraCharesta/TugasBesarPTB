@@ -76,12 +76,12 @@ fun HomeScreen(
         delay(200)
         showModules = true
 
-        // 🔹 AMBIL TOKEN FCM & KIRIM KE SERVER
+
         FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
             Log.d("FCM_HOME", "Token FCM Home: $fcmToken")
             sendHomeNotificationToken(userId, fcmToken)
 
-            // 🔔 Tampilkan notif lokal setiap Home dibuka
+
             showLocalNotification(
                 context,
                 "Selamat Datang",
@@ -101,7 +101,7 @@ fun HomeScreen(
                 .verticalScroll(scrollState)
         ) {
 
-            // ===== HEADER =====
+
             AnimatedVisibility(
                 visible = showHeader,
                 enter = fadeIn() + expandVertically()
@@ -130,7 +130,7 @@ fun HomeScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // ===== LOGO =====
+
             AnimatedVisibility(
                 visible = showLogo,
                 enter = fadeIn() + slideInVertically { it / 2 }
@@ -161,7 +161,7 @@ fun HomeScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            // ===== MODULE BUTTONS =====
+
             AnimatedVisibility(
                 visible = showModules,
                 enter = fadeIn() + slideInVertically { it / 3 }
@@ -171,7 +171,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
 
-                    // 🔹 PEMBAYARAN
+
                     ModuleItem(
                         title = "MODUL PEMBAYARAN",
                         iconRes = R.drawable.ic_payment,
@@ -181,7 +181,7 @@ fun HomeScreen(
                         navController.navigate(Screen.Payment.createRoute(userId))
                     }
 
-                    // 🔹 PELAPORAN
+
                     ModuleItem(
                         title = "MODUL PELAPORAN KERUSAKAN BARANG",
                         iconRes = R.drawable.ic_report,
@@ -191,7 +191,7 @@ fun HomeScreen(
                         navController.navigate(Screen.Report.createRoute(userId, displayName ?: "User"))
                     }
 
-                    // 🔹 PIKET (✅ BENAR → DUTY MODULE)
+
                     ModuleItem(
                         title = "MODUL PIKET",
                         iconRes = R.drawable.ic_duty,
@@ -248,7 +248,7 @@ fun ModuleItem(
     }
 }
 
-// 🔹 FUNCTION KIRIM TOKEN FCM HOME KE SERVER
+
 private fun sendHomeNotificationToken(userId: Int, token: String) {
     val json = JSONObject().apply {
         put("userId", userId)
@@ -275,7 +275,7 @@ private fun sendHomeNotificationToken(userId: Int, token: String) {
 
 }
 
-// 🔹 FUNCTION NOTIF LOKAL
+
 private fun showLocalNotification(context: android.content.Context, title: String, message: String) {
     val channelId = "home_channel"
     val notificationManager =
@@ -291,7 +291,7 @@ private fun showLocalNotification(context: android.content.Context, title: Strin
     }
 
     val notification = NotificationCompat.Builder(context, channelId)
-        .setSmallIcon(R.drawable.ic_duty) // ganti dengan icon project
+        .setSmallIcon(R.drawable.ic_duty)
         .setContentTitle(title)
         .setContentText(message)
         .setPriority(NotificationCompat.PRIORITY_HIGH)

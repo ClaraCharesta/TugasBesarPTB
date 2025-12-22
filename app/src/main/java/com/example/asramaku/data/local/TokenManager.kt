@@ -20,7 +20,7 @@ class TokenManager(private val context: Context) {
         private val USER_NAME_KEY = stringPreferencesKey("user_name")
     }
 
-    // ================= SAVE SESSION =================
+
     suspend fun saveSession(
         token: String,
         userId: Int,
@@ -33,7 +33,7 @@ class TokenManager(private val context: Context) {
         }
     }
 
-    // ================= READ TOKEN =================
+
     val token: Flow<String> = context.dataStore.data
         .catch { e ->
             if (e is IOException) emit(emptyPreferences())
@@ -41,7 +41,7 @@ class TokenManager(private val context: Context) {
         }
         .map { it[TOKEN_KEY] ?: "" }
 
-    // ================= READ USER ID =================
+
     val userId: Flow<Int> = context.dataStore.data
         .catch { e ->
             if (e is IOException) emit(emptyPreferences())
@@ -49,7 +49,7 @@ class TokenManager(private val context: Context) {
         }
         .map { it[USER_ID_KEY] ?: 0 }
 
-    // ================= READ USER NAME =================
+
     val userName: Flow<String> = context.dataStore.data
         .catch { e ->
             if (e is IOException) emit(emptyPreferences())
@@ -57,12 +57,12 @@ class TokenManager(private val context: Context) {
         }
         .map { it[USER_NAME_KEY] ?: "" }
 
-    // ================= HELPER =================
+
     suspend fun getToken(): String {
         return token.first()
     }
 
-    // ================= LOGOUT =================
+
     suspend fun clearSession() {
         context.dataStore.edit { it.clear() }
     }

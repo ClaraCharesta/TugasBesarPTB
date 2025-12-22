@@ -10,7 +10,7 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    // ================= AUTH =================
+
     @POST("api/auth/login")
     suspend fun login(
         @Body request: LoginRequest
@@ -21,7 +21,7 @@ interface ApiService {
         @Body request: RegisterRequest
     ): Response<LoginResponse>
 
-    // ================= PIKET =================
+
     @GET("api/piket/{userId}")
     suspend fun getPiketUser(
         @Path("userId") userId: Int
@@ -32,19 +32,19 @@ interface ApiService {
         @Body request: PiketRequest
     ): Response<PiketResponse>
 
-    // ================= GANTI PIKET =================
+
     @PUT("api/piket/update-tanggal")
     suspend fun updateTanggalPiket(
         @Body body: Map<String, String>
     ): Response<Void>
 
-    // ================= REKAP PIKET =================
+
     @GET("api/piket/riwayat/{userId}")
     suspend fun getRiwayatPiket(
         @Path("userId") userId: Int
     ): List<RiwayatPiket>
 
-    // ================= SELESAIKAN PIKET =================
+
     @Multipart
     @POST("api/piket/selesai")
     suspend fun selesaikanPiket(
@@ -52,7 +52,7 @@ interface ApiService {
         @Part foto: MultipartBody.Part
     ): Response<SelesaiPiketResponse>
 
-    // ================= REPORT =================
+
     @Multipart
     @POST("api/reports")
     suspend fun createReport(
@@ -91,13 +91,13 @@ interface ApiService {
         @Part photo: MultipartBody.Part?
     ): Response<ReportDetailResponse>
 
-    // ================= TAGIHAN (status = pending) =================
+
     @GET("api/payments/tagihan/{userId}")
     suspend fun getTagihan(
         @Path("userId") userId: Int
     ): Response<TagihanResponse>
 
-    // ================= CREATE / UPDATE PEMBAYARAN =================
+
     @Multipart
     @POST("api/payments/create")
     suspend fun createPayment(
@@ -107,33 +107,33 @@ interface ApiService {
         @Part buktiBayar: MultipartBody.Part?   // optional
     ): Response<PaymentCreateResponse>
 
-    // ================= RIWAYAT PEMBAYARAN (status = lunas) =================
+
     @GET("api/payments/riwayat/{userId}")
     suspend fun getRiwayat(
         @Path("userId") userId: Int
     ): Response<List<Payment>>
 
-    // ================= STATUS PEMBAYARAN (semua status) =================
+
     @GET("api/payments/status/{userId}")
     suspend fun getAllStatus(
         @Path("userId") userId: Int
     ): Response<List<Payment>>
 
-    // ================= DETAIL PEMBAYARAN =================
+
     @GET("api/payments/detail/{id}")
     suspend fun getPaymentDetail(
         @Path("id") paymentId: Int
     ): Response<DetailPembayaranResponse>
 
 
-    // ================= DELETE PEMBAYARAN =================
+
     @DELETE("api/payments/{id}")
     suspend fun deletePayment(
         @Path("id") paymentId: Int
     ): Response<MessageResponse>
 }
 
-// ================= RESPONSE DATA =================
+
 data class TagihanResponse(
     val success: Boolean,
     val data: List<Payment>

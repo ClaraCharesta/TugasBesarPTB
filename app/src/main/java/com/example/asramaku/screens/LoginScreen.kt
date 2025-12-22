@@ -80,7 +80,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // ================= LOGO =================
+
             AnimatedVisibility(visible = showLogo, enter = fadeIn(), exit = fadeOut()) {
                 Image(
                     painter = painterResource(id = R.drawable.school_icon),
@@ -91,7 +91,7 @@ fun LoginScreen(
                 )
             }
 
-            // ================= FORM =================
+
             AnimatedVisibility(visible = showForm, enter = fadeIn(), exit = fadeOut()) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
@@ -136,7 +136,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ================= BUTTON =================
+
             AnimatedVisibility(visible = showButtons, enter = fadeIn(), exit = fadeOut()) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
@@ -161,15 +161,11 @@ fun LoginScreen(
                                             userName = userName
                                         )
 
-                                        // ===============================
-                                        // 🔹 AMBIL FCM TOKEN
-                                        // ===============================
+
                                         FirebaseMessaging.getInstance().token
                                             .addOnSuccessListener { fcmToken ->
 
-                                                // ===============================
-                                                // 🔹 TOKEN PIKET (TETAP)
-                                                // ===============================
+
                                                 scope.launch {
                                                     try {
                                                         FcmPiketService.api.sendToken(
@@ -190,14 +186,10 @@ fun LoginScreen(
                                                     }
                                                 }
 
-                                                // ===============================
-                                                // 💰 TOKEN PAYMENT
-                                                // ===============================
+
                                                 sendPaymentToken(userId, fcmToken)
 
-                                                // ===============================
-                                                // 🧾 TOKEN REPORT (BARU)
-                                                // ===============================
+
                                                 sendReportToken(userId, fcmToken)
                                             }
                                     }
@@ -263,9 +255,7 @@ fun LoginScreen(
     }
 }
 
-// =================================================
-// 🔥 FUNCTION KHUSUS PAYMENT
-// =================================================
+
 private fun sendPaymentToken(userId: Int, token: String) {
     val json = JSONObject().apply {
         put("userId", userId)
@@ -291,9 +281,7 @@ private fun sendPaymentToken(userId: Int, token: String) {
     })
 }
 
-// =================================================
-// 🧾 FUNCTION KHUSUS REPORT (BARU)
-// =================================================
+
 private fun sendReportToken(userId: Int, token: String) {
     val json = JSONObject().apply {
         put("userId", userId)

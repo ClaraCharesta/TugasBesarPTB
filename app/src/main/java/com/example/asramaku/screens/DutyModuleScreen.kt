@@ -32,8 +32,8 @@ fun DutyModuleScreen(
     namaLogin: String
 ) {
 
-    // Pastikan namaLogin tidak null setelah login
-    val namaUser = Uri.decode(namaLogin)  // diterima dari route
+
+    val namaUser = Uri.decode(namaLogin)
 
     val topColor = Color(0xFFD9ECE7)
     val bottomColor = Color(0xFFD9ECE7)

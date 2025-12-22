@@ -5,5 +5,5 @@ data class Notifikasi(
     val judul: String,
     val pesan: String,
     val waktu: String,
-    val tipe: String // "kirim", "edit", "hapus"
+    val tipe: String
 )

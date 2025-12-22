@@ -51,7 +51,7 @@ fun SignUpScreen(navController: NavController) {
     val buttonColor = Color(0xFF91C9C0)
     val textColor = Color(0xFF324E52)
 
-    // Animasi muncul
+
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
@@ -82,7 +82,7 @@ fun SignUpScreen(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // Gambar / Icon
+
                 Image(
                     painter = painterResource(id = R.drawable.school_icon),
                     contentDescription = "App Illustration",
@@ -91,7 +91,7 @@ fun SignUpScreen(navController: NavController) {
                         .padding(bottom = 24.dp)
                 )
 
-                // Judul
+
                 Text(
                     text = "Create Account",
                     fontSize = 28.sp,
@@ -110,7 +110,7 @@ fun SignUpScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // Name input
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -122,7 +122,7 @@ fun SignUpScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Email input
+
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -134,7 +134,7 @@ fun SignUpScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Password input
+
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -157,7 +157,7 @@ fun SignUpScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(30.dp))
 
-                // Sign Up Button (fungsional)
+
                 Button(
                     onClick = {
                         if (name.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
@@ -206,7 +206,7 @@ fun SignUpScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Already have account
+
                 TextButton(onClick = { navController.navigate(Screen.Login.route) }) {
                     Text(
                         text = "Already have an account? Login",

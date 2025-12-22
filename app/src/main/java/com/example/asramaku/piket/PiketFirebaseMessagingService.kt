@@ -19,9 +19,7 @@ import com.google.firebase.messaging.RemoteMessage
 
 class PiketFirebaseMessagingService : FirebaseMessagingService() {
 
-    // ===============================
-    // 🔔 CHANNEL
-    // ===============================
+
     private val PIKET_CHANNEL_ID = "piket_channel_v2"
     private val PAYMENT_CHANNEL_ID = "payment_channel"
     private val REPORT_CHANNEL_ID = "report_channel"
@@ -30,9 +28,7 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
     private val PAYMENT_CHANNEL_NAME = "Payment Notifications"
     private val REPORT_CHANNEL_NAME = "Report Notifications"
 
-    // ===============================
-    // 📩 TERIMA SEMUA FCM
-    // ===============================
+
     override fun onMessageReceived(message: RemoteMessage) {
         Log.d("FCM_RECEIVED", "Pesan diterima: ${message.data}")
 
@@ -46,9 +42,7 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    // ===============================
-    // 🔵 NOTIF PIKET (ASLI, TIDAK DIRUSAK)
-    // ===============================
+
     private fun handlePiketNotification() {
         createPiketChannel()
 
@@ -86,9 +80,7 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
         Log.d("FCM_NOTIF_DEBUG", "Notif PIKET tampil")
     }
 
-    // ===============================
-    // 💰 NOTIF PAYMENT (DIPERBAIKI, AMAN UNTUK DATA-ONLY & NOTIF)
-    // ===============================
+
     private fun handlePaymentNotification(message: RemoteMessage) {
         createPaymentChannel()
 
@@ -110,9 +102,7 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
         Log.d("FCM_PAYMENT", "Notif PAYMENT tampil")
     }
 
-    // ===============================
-    // 🧾 NOTIF REPORT (BARU, TANPA GANGGU YANG LAIN)
-    // ===============================
+
     private fun handleReportNotification(message: RemoteMessage) {
         createReportChannel()
 
@@ -147,9 +137,7 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
         Log.d("FCM_REPORT", "Notif REPORT tampil")
     }
 
-    // ===============================
-    // 🔧 CHANNEL PIKET
-    // ===============================
+
     private fun createPiketChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -168,9 +156,7 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    // ===============================
-    // 🔧 CHANNEL PAYMENT
-    // ===============================
+
     private fun createPaymentChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -187,9 +173,7 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    // ===============================
-    // 🔧 CHANNEL REPORT (BARU)
-    // ===============================
+
     private fun createReportChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -206,11 +190,9 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
-    // ===============================
-    // 🔑 TOKEN PIKET (TETAP)
-    // ===============================
+
     override fun onNewToken(token: String) {
         Log.d("FCM_NEW_TOKEN_PIKET", "Token baru: $token")
-        // token piket tetap seperti sebelumnya
+
     }
 }

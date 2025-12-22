@@ -32,9 +32,7 @@ fun PaymentTabMenu(
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        // ===========================
-        // TAB: TAGIHAN
-        // ===========================
+
         PaymentTabItem(
             label = "Tagihan",
             icon = Icons.Default.List,
@@ -46,9 +44,7 @@ fun PaymentTabMenu(
             }
         }
 
-        // ===========================
-        // TAB: STATUS PEMBAYARAN
-        // ===========================
+
         PaymentTabItem(
             label = "Status",
             icon = Icons.Default.CheckCircle,
@@ -63,9 +59,7 @@ fun PaymentTabMenu(
         }
 
 
-        // ===========================
-        // TAB: RIWAYAT
-        // ===========================
+
         PaymentTabItem(
             label = "Riwayat",
             icon = Icons.Default.History,

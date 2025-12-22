@@ -34,15 +34,15 @@ fun PaymentModuleScreen(
 ) {
     val tagihanList by viewModel.tagihanList.collectAsState()
 
-    // 🔹 Load tagihan dan kirim reminder saat screen dibuka
+
     LaunchedEffect(userId) {
         if (userId != 0) {
-            // Pastikan tagihan di-load dulu
+
             viewModel.loadTagihan(userId)
 
-            // 🔹 Tunggu perubahan tagihanList, dan hanya kirim jika ada pending
+
             snapshotFlow { tagihanList }
-                .distinctUntilChanged() // hanya reaksi saat list berubah
+                .distinctUntilChanged()
                 .collectLatest { list ->
                     val hasPending = list.any { it.status.lowercase() != "lunas" }
                     if (hasPending) {
@@ -66,9 +66,7 @@ fun PaymentModuleScreen(
             .fillMaxSize()
             .background(Color(0xFFFFF0D5))
     ) {
-        // =========================
-        // TOP BAR
-        // =========================
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -91,9 +89,7 @@ fun PaymentModuleScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // =========================
-        // LIST TAGIHAN
-        // =========================
+
         Column(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
@@ -119,14 +115,12 @@ fun PaymentModuleScreen(
             }
         }
 
-        // =========================
-        // BOTTOM NAVIGATION
-        // =========================
+
         BottomNavigationBar(navController, userId)
     }
 }
 
-// 🔹 Fungsi untuk mengirim reminder ke backend FCM Payment
+
 private fun sendPaymentReminder(userId: Int) {
     val client = OkHttpClient.Builder()
         .callTimeout(60, TimeUnit.SECONDS)
@@ -141,7 +135,7 @@ private fun sendPaymentReminder(userId: Int) {
         .post(body)
         .build()
 
-    // 🔹 Gunakan enqueue agar asynchronous
+
     client.newCall(request).enqueue(object : okhttp3.Callback {
         override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
             android.util.Log.e("FCM_REMINDER", "Exception: ${e.message}")

@@ -40,7 +40,6 @@ fun DaftarLaporan(navController: NavController) {
     var selectedReportId by remember { mutableStateOf<Int?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // ================= FETCH DATA =================
     LaunchedEffect(Unit) {
         try {
             val token = tokenManager.token.first()
@@ -76,7 +75,6 @@ fun DaftarLaporan(navController: NavController) {
         containerColor = LightYellow
     ) { paddingValues ->
 
-        // ================= DELETE DIALOG =================
         if (showDeleteDialog && selectedReportId != null) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
@@ -120,7 +118,6 @@ fun DaftarLaporan(navController: NavController) {
             )
         }
 
-        // ================= CONTENT =================
         when {
             isLoading -> {
                 Box(

@@ -7,7 +7,7 @@ import retrofit2.http.POST
 
 
 
-// ================= API =================
+
 interface FcmPiketApi {
 
     @POST("api/fcm/piket")
@@ -16,7 +16,7 @@ interface FcmPiketApi {
     )
 }
 
-// ================= RETROFIT INSTANCE =================
+
 object FcmPiketService {
 
     private val retrofit = Retrofit.Builder()

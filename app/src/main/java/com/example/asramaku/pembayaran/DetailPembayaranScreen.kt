@@ -28,7 +28,7 @@ fun DetailPembayaranScreen(
     onBackClick: () -> Unit
 ) {
 
-    // 🔑 panggil LiveData SEKALI
+
     val detailLiveData = remember(paymentId) {
         viewModel.getDetailPayment(paymentId)
     }
@@ -66,7 +66,7 @@ fun DetailPembayaranScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp), // INI YANG MENGGESER KE ATAS
+                    .padding(top = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 

@@ -28,13 +28,9 @@ import android.util.Log
 @Composable
 fun ReportScreen(
     navController: NavController,
-    userId: Int,          // ✅ FIX FINAL
+    userId: Int,
     userName: String?
 ) {
-
-    // ===============================
-    // 🔔 NOTIF REPORT SAAT MASUK HALAMAN
-    // ===============================
     LaunchedEffect(Unit) {
         if (userId != 0) {
             sendReportNotification(userId)
@@ -131,9 +127,6 @@ fun MenuCard(
     }
 }
 
-// =================================================
-// 🔥 FUNCTION KIRIM NOTIF REPORT KE BACKEND
-// =================================================
 private fun sendReportNotification(userId: Int) {
     val json = JSONObject().apply {
         put("userId", userId)

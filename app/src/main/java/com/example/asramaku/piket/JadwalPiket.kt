@@ -38,9 +38,7 @@ import java.net.URL
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-// =======================
-// DATA CLASS
-// =======================
+
 data class PiketResponse(
     val id: Int,
     val userId: Int,
@@ -49,9 +47,7 @@ data class PiketResponse(
 )
 
 
-// =======================
-// SCREEN
-// =======================
+
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +75,6 @@ fun JadwalPiketScreen(
     var piketList by remember { mutableStateOf<List<PiketResponse>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
 
-    // Fetch data dari server
     LaunchedEffect(effectiveUserId) {
         if (effectiveUserId != 0) {
             coroutineScope.launch {
@@ -88,7 +83,7 @@ fun JadwalPiketScreen(
         }
     }
 
-    // tampilkan status Belum + Telat
+
     val filteredList = piketList.filter {
         (it.status.equals("Belum Dikerjakan", ignoreCase = true) ||
                 it.status.equals("Telat Dikerjakan", ignoreCase = true)) &&
@@ -157,7 +152,7 @@ fun JadwalPiketScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ====================== LIST CARD =======================
+
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
                 if (filteredList.isEmpty()) {
@@ -266,9 +261,7 @@ fun JadwalPiketScreen(
 }
 
 
-// =====================
-// API FUNCTION
-// =====================
+
 @SuppressLint("NewApi")
 suspend fun getPiketFromServer(userId: Int): List<PiketResponse> {
     return withContext(Dispatchers.IO) {

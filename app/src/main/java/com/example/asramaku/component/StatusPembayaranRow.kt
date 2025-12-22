@@ -60,7 +60,7 @@ fun RowScope.StatusCell(status: String, weight: Float) {
         modifier = Modifier
             .weight(weight)
             .fillMaxHeight()
-            .padding(horizontal = 6.dp, vertical = 6.dp), // memberi jarak dari garis tepi
+            .padding(horizontal = 6.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(

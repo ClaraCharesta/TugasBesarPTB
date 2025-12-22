@@ -27,7 +27,7 @@ fun RiwayatCard(
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFDCE8DC)   // warna sesuai gambar
+            containerColor = Color(0xFFDCE8DC)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -63,7 +63,7 @@ fun RiwayatCard(
                     Text("Lihat detail")
                 }
 
-                // ⭐ Tombol hapus
+
                 IconButton(
                     onClick = onDeleteClick,
                     colors = IconButtonDefaults.iconButtonColors(

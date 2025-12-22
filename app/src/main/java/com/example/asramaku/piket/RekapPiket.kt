@@ -37,7 +37,7 @@ import retrofit2.http.Path
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-// ===================== DATA MODEL =====================
+
 data class RiwayatPiket(
     val id: Int,
     val userId: Int,
@@ -46,7 +46,7 @@ data class RiwayatPiket(
     val status: String
 )
 
-// ===================== RETROFIT API =====================
+
 interface RiwayatApi {
     @GET("api/piket/riwayat/{userId}")
     suspend fun getRiwayatPiket(@Path("userId") userId: Int): List<RiwayatPiket>
@@ -63,7 +63,7 @@ object ApiClient {
     }
 }
 
-// ===================== KOMPOSABLE =====================
+
 @SuppressLint("NewApi")
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,7 +92,7 @@ fun RekapPiketSayaScreen(
     val scope = rememberCoroutineScope()
     val formatterDisplay = DateTimeFormatter.ofPattern("dd - MM - yyyy")
 
-    // ===================== FETCH DATA =====================
+
     LaunchedEffect(effectiveUserId) {
         scope.launch {
             try {
@@ -103,10 +103,10 @@ fun RekapPiketSayaScreen(
         }
     }
 
-    // ===================== FILTER SEARCH =====================
+
     val filteredList = jadwalList.filter { it.tanggal.contains(searchQuery) }
 
-    // ===================== UI =====================
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -143,7 +143,7 @@ fun RekapPiketSayaScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ====================== SEARCH BAR =======================
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -171,7 +171,7 @@ fun RekapPiketSayaScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ====================== LIST CARD =======================
+
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (filteredList.isEmpty()) {
                     Box(
@@ -198,7 +198,7 @@ fun RekapPiketSayaScreen(
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 10.dp)
                             ) {
-                                // ===================== NAMA & TANGGAL & FOTO =====================
+
                                 Column {
                                     Text(
                                         text = "Nama : $effectiveNamaLogin",
@@ -227,7 +227,7 @@ fun RekapPiketSayaScreen(
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
-                                // ===================== STATUS =====================
+
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
@@ -244,7 +244,7 @@ fun RekapPiketSayaScreen(
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
-                                // ===================== BUTTON LIHAT DETAIL =====================
+
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()

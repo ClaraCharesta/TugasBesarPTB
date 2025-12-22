@@ -23,7 +23,6 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.asramaku.data.local.TokenManager
 import com.example.asramaku.data.remote.RetrofitClient
-import com.example.asramaku.model.Laporan
 import com.example.asramaku.ui.theme.DarkTeal
 import com.example.asramaku.ui.theme.LightYellow
 import com.example.asramaku.utils.createImageUri
@@ -51,7 +50,6 @@ fun EditLaporan(
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
 
-    // 🔑 PEMISAHAN PENTING
     var oldPhotoUrl by remember { mutableStateOf<String?>(null) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -59,7 +57,6 @@ fun EditLaporan(
     var showImagePickerDialog by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
-    // ================= FETCH DETAIL =================
     LaunchedEffect(laporanId) {
         try {
             val token = tokenManager.token.first()
@@ -87,7 +84,6 @@ fun EditLaporan(
         }
     }
 
-    // ================= IMAGE PICKER =================
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
@@ -109,7 +105,6 @@ fun EditLaporan(
         }
     }
 
-    // ================= UI =================
     Scaffold(
         topBar = {
             TopAppBar(
@@ -186,7 +181,6 @@ fun EditLaporan(
 
             Spacer(Modifier.height(12.dp))
 
-            // ================= PREVIEW FOTO =================
             when {
                 imageUri != null -> {
                     Image(
@@ -225,7 +219,6 @@ fun EditLaporan(
         }
     }
 
-    // ================= PILIH FOTO =================
     if (showImagePickerDialog) {
         AlertDialog(
             onDismissRequest = { showImagePickerDialog = false },
@@ -245,7 +238,6 @@ fun EditLaporan(
         )
     }
 
-    // ================= SIMPAN =================
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },

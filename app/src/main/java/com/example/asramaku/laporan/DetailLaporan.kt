@@ -108,7 +108,6 @@ fun DetailLaporan(
             laporan != null -> {
                 val data = laporan!!
 
-                // ================= URL FOTO FINAL =================
                 val imageUrl = data.photoUrl?.takeIf { it.isNotBlank() }?.let {
                     if (it.startsWith("http")) {
                         it
@@ -151,7 +150,6 @@ fun DetailLaporan(
                         )
                     }
 
-                    // ================= FOTO =================
                     if (imageUrl != null) {
                         Image(
                             painter = rememberAsyncImagePainter(imageUrl),

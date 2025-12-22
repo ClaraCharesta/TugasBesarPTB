@@ -20,22 +20,22 @@ import kotlinx.coroutines.launch
 fun RiwayatPembayaranScreen(
     navController: NavController,
     viewModel: PaymentViewModel,
-    userId: Int,                    // ✅ userId dari parameter
-    onDetailClick: (Int, Int) -> Unit, // (userId, paymentId)
-    onDeleteItem: (Int, Int) -> Unit   // (userId, paymentId)
+    userId: Int,
+    onDetailClick: (Int, Int) -> Unit,
+    onDeleteItem: (Int, Int) -> Unit
 ) {
 
-    // STATE DATA
+
     val riwayatLunas by viewModel.riwayatLunasList.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var paymentIdToDelete by remember { mutableStateOf<Int?>(null) }
 
-    // LOAD DATA
+
     LaunchedEffect(userId) {
         viewModel.loadRiwayatLunas(userId)
     }
 
-    // DIALOG KONFIRMASI
+
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -43,7 +43,7 @@ fun RiwayatPembayaranScreen(
             text = { Text("Apakah Anda yakin ingin menghapus riwayat pembayaran ini?") },
             confirmButton = {
                 TextButton(onClick = {
-                    paymentIdToDelete?.let { id -> onDeleteItem(userId, id) } // ✅ pakai userId
+                    paymentIdToDelete?.let { id -> onDeleteItem(userId, id) }
                     showDialog = false
                 }) {
                     Text("Hapus", color = Color.Red)
@@ -72,7 +72,7 @@ fun RiwayatPembayaranScreen(
             PaymentTabMenu(
                 currentRoute = "riwayat_pembayaran",
                 navController = navController,
-                userId = userId  // ✅ lempar userId ke tab menu
+                userId = userId
             )
         }
     ) { innerPadding ->
@@ -93,7 +93,7 @@ fun RiwayatPembayaranScreen(
                             bulanTagihan = item.bulan,
                             jumlahTagihan = item.totalTagihan.toString(),
                             status = item.status,
-                            onDetailClick = { onDetailClick(userId, item.id) }, // ✅ lempar userId
+                            onDetailClick = { onDetailClick(userId, item.id) },
                             onDeleteClick = {
                                 paymentIdToDelete = item.id
                                 showDialog = true

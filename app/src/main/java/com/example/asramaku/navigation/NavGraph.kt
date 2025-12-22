@@ -2,11 +2,8 @@ package com.example.asramaku.navigation
 
 import android.net.Uri
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
@@ -23,7 +20,7 @@ import com.example.asramaku.piket.rekap.DetailPiketSayaScreen
 import com.example.asramaku.piket.RekapPiketSayaScreen
 import java.time.LocalDate
 
-// Tambahan import modul laporan
+
 import com.example.asramaku.laporan.*
 import com.example.asramaku.piket.jadwalpiket.GantiPiketCalendarScreen
 
@@ -37,14 +34,14 @@ sealed class Screen(val route: String) {
     object SignUp : Screen("signup_screen")
     object Welcome : Screen("welcome_screen")
 
-    // Home: base "home" + optional query ?userName=
+
     object Home : Screen("home") {
         fun createRoute(userName: String? = null): String =
             if (userName.isNullOrBlank()) "home" else "home?userName=${Uri.encode(userName)}"
-        // composable routes registered: "home" and "home?userName={userName}"
+
     }
 
-    // Duty expects two path params
+
     object Duty : Screen("duty/{userId}/{namaLogin}") {
         fun createRoute(userId: Int, namaLogin: String): String {
             return "duty/$userId/${Uri.encode(namaLogin)}"
@@ -105,10 +102,6 @@ sealed class Screen(val route: String) {
         fun createRoute(userId: Int) = "payment_screen/$userId"
     }
 
-
-
-
-
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -123,9 +116,7 @@ fun NavGraph(navController: NavHostController) {
         navController = navController,
         startDestination = Screen.Splash.route
     ) {
-        // ========================
-        // AUTH
-        // ========================
+
         composable(Screen.Splash.route) {
             SplashScreen(navController = navController)
         }
@@ -142,16 +133,7 @@ fun NavGraph(navController: NavHostController) {
             WelcomeScreen(navController = navController)
         }
 
-        // ========================
-        // HOME - two registrations:
-        // 1) plain "home" (no args)
-        // 2) "home?userName={userName}" (optional query param)
-        // This preserves existing HomeScreen signature (navController, userName: String?)
-        // so you DON'T need to modify HomeScreen file.
-        // ========================
-// ========================
-// HOME FIX SESUAI LOGIN
-// ========================
+
         composable(
             route = "home_screen/{userId}/{userName}",
             arguments = listOf(
@@ -171,11 +153,6 @@ fun NavGraph(navController: NavHostController) {
         }
 
 
-
-
-        // ========================
-        // DUTY - use exact route from sealed class
-        // ========================
         composable(
             route = Screen.Duty.route,
             arguments = listOf(
@@ -199,9 +176,7 @@ fun NavGraph(navController: NavHostController) {
 
 
 
-        // ========================
-        // JADWAL PIKET
-        // ========================
+
         composable(
             route = "jadwal_piket_screen/{userId}/{nama}",
             arguments = listOf(
@@ -216,14 +191,12 @@ fun NavGraph(navController: NavHostController) {
         }
 
 
-        // ========================
-        // REKAP PIKET
-        // ========================
+
         composable(
             route = Screen.RekapPiket.route,
             arguments = listOf(
                 navArgument("userId") { type = NavType.IntType },
-                navArgument("namaLogin") { type = NavType.StringType }   // ⬅️ tambahkan namaLogin
+                navArgument("namaLogin") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val userId = backStackEntry.arguments?.getInt("userId") ?: 0
@@ -239,9 +212,7 @@ fun NavGraph(navController: NavHostController) {
 
 
 
-        // ========================
-        // BELUM DIKERJAKAN
-        // ========================
+
         composable(
             route = Screen.BelumDikerjakan.route,
             arguments = listOf(
@@ -269,9 +240,7 @@ fun NavGraph(navController: NavHostController) {
 
 
 
-        // ========================
-        // DETAIL PIKET SAYA (optional fotoUri)
-        // ========================
+
         composable(
             route = Screen.DetailPiketSaya.route,
             arguments = listOf(
@@ -293,9 +262,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
 
-        // ========================
-        // GANTI PIKET
-        // ========================
+
         composable(
             route = "ganti_piket_screen/{nama}/{piketId}/{tanggal}",
             arguments = listOf(
@@ -319,9 +286,6 @@ fun NavGraph(navController: NavHostController) {
 
 
 
-        // ========================
-        // Report, Payment (no args)
-        // ========================
 
 
 
@@ -341,18 +305,16 @@ fun NavGraph(navController: NavHostController) {
 
 
 
-        // ============================
-        // MODUL PEMBAYARAN
-        // ============================
+
         composable(
-            route = Screen.Payment.route, // route = "payment_screen/{userId}"
+            route = Screen.Payment.route,
             arguments = listOf(navArgument("userId") { type = NavType.IntType })
         ) { backStackEntry ->
             val vm: PaymentViewModel = viewModel(
                 factory = PaymentViewModelFactory(RetrofitClient.instance)
             )
 
-            // Ambil userId dari navigation argument
+
             val userId = backStackEntry.arguments?.getInt("userId") ?: 0
 
             PaymentModuleScreen(
@@ -364,9 +326,7 @@ fun NavGraph(navController: NavHostController) {
 
 
 
-        // ============================
-        // KONFIRMASI PEMBAYARAN
-        // ============================
+
         composable(
             route = "konfirmasi_pembayaran/{userId}/{bulan}/{total}",
             arguments = listOf(
@@ -387,16 +347,14 @@ fun NavGraph(navController: NavHostController) {
             KonfirmasiPembayaranScreen(
                 navController = navController,
                 viewModel = vm,
-                userId = userId,       // ✅ sekarang diteruskan
+                userId = userId,
                 bulan = bulan,
                 total = total
             )
         }
 
 
-        // ============================
-        // STATUS PEMBAYARAN
-        // ============================
+
         composable(
             "status_pembayaran/{userId}",
             arguments = listOf(
@@ -413,13 +371,12 @@ fun NavGraph(navController: NavHostController) {
             StatusPembayaranScreen(
                 navController = navController,
                 viewModel = vm,
-                userId = userId // ✅ diteruskan ke screen
+                userId = userId
             )
         }
 
 
-// RIWAYAT PEMBAYARAN (FIX FINAL)
-// ============================
+
         composable("riwayat_pembayaran/{userId}",
             arguments = listOf(navArgument("userId") { type = NavType.IntType })
         ) { backStackEntry ->
@@ -444,9 +401,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
 
-        // ============================
-// DETAIL PEMBAYARAN (FIX FINAL)
-// ============================
+
         composable(
             route = "detail_pembayaran/{userId}/{paymentId}",
             arguments = listOf(
@@ -464,7 +419,7 @@ fun NavGraph(navController: NavHostController) {
 
             DetailPembayaranScreen(
                 navController = navController,
-                userId = userId,        // ✅ lempar userId
+                userId = userId,
                 paymentId = paymentId,
                 viewModel = vm,
                 onBackClick = { navController.popBackStack() }
@@ -472,9 +427,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
 
-        // ========================
-        // LAPORAN KERUSAKAN
-        // ========================
+
 
 
         composable("buat_laporan") {
@@ -488,7 +441,7 @@ fun NavGraph(navController: NavHostController) {
         composable(
             route = "detail_laporan/{laporanId}",
             arguments = listOf(
-                navArgument("laporanId") { type = NavType.IntType } // ✅ ubah jadi IntType
+                navArgument("laporanId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
 
@@ -503,10 +456,10 @@ fun NavGraph(navController: NavHostController) {
 
         composable(
             route = "edit_laporan/{laporanId}",
-            arguments = listOf(navArgument("laporanId") { type = NavType.IntType }) // ✅ ubah jadi IntType
+            arguments = listOf(navArgument("laporanId") { type = NavType.IntType })
         ) { backStackEntry ->
 
-            val laporanId = backStackEntry.arguments?.getInt("laporanId") ?: 0 // ✅ default 0 jika null
+            val laporanId = backStackEntry.arguments?.getInt("laporanId") ?: 0
 
             EditLaporan(
                 navController = navController,

@@ -7,7 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Warna untuk Light Theme
+
 private val LightColorScheme = lightColorScheme(
     primary = LightPrimary,
     secondary = LightAccent,
@@ -19,7 +19,7 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Color.Black
 )
 
-// Warna untuk Dark Theme
+
 private val DarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
     secondary = DarkAccent,

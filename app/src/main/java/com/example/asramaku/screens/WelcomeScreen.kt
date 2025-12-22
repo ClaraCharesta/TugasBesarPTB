@@ -34,7 +34,7 @@ fun WelcomeScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Gambar ilustrasi
+
             Image(
                 painter = painterResource(id = R.drawable.school_icon),
                 contentDescription = "App Illustration",
@@ -43,7 +43,7 @@ fun WelcomeScreen(navController: NavController) {
                     .padding(bottom = 40.dp)
             )
 
-            // Tombol Login
+
             Button(
                 onClick = { navController.navigate(Screen.Login.route) },
                 colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
@@ -63,7 +63,7 @@ fun WelcomeScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Tombol Sign Up
+
             OutlinedButton(
                 onClick = { navController.navigate(Screen.SignUp.route) },
                 shape = RoundedCornerShape(16.dp),

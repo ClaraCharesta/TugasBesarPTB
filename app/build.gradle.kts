@@ -44,7 +44,7 @@ android {
         compose = true
     }
 
-    // ===================== PACKAGING =====================
+
     packaging {
         resources {
             excludes += listOf(
@@ -56,7 +56,7 @@ android {
                 "/META-INF/NOTICE",
                 "/META-INF/NOTICE.txt",
                 "/META-INF/notice.txt",
-                "/META-INF/io.netty.versions.properties" // <=== tambahkan ini
+                "/META-INF/io.netty.versions.properties"
             )
         }
     }
@@ -68,7 +68,7 @@ dependencies {
 
     implementation("com.google.firebase:firebase-analytics-ktx:21.3.0")
     implementation("com.google.firebase:firebase-messaging-ktx")
-    //noinspection UseTomlInstead
+
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")

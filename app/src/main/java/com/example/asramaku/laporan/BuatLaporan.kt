@@ -17,7 +17,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -32,7 +31,6 @@ import com.example.asramaku.data.remote.RetrofitClient
 import com.example.asramaku.ui.theme.DarkTeal
 import com.example.asramaku.ui.theme.LightYellow
 import com.example.asramaku.ui.theme.RedButton
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -49,7 +47,6 @@ fun BuatLaporan(navController: NavController) {
     val context = LocalContext.current
     val coroutine = rememberCoroutineScope()
 
-    // ====== AMBIL TOKEN DARI DATASTORE ======
     val tokenManager = TokenManager(context)
     var token by remember { mutableStateOf("") }
 
@@ -110,7 +107,6 @@ fun BuatLaporan(navController: NavController) {
                 .verticalScroll(rememberScrollState())
         ) {
 
-            // JUDUL
             Text("Judul Kerusakan", color = Color.Gray)
             OutlinedTextField(
                 value = judul,
@@ -121,7 +117,6 @@ fun BuatLaporan(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // DESKRIPSI
             Text("Deskripsi", color = Color.Gray)
             OutlinedTextField(
                 value = deskripsi,
@@ -132,7 +127,6 @@ fun BuatLaporan(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // LOKASI
             Text("Lokasi/Kamar", color = Color.Gray)
             OutlinedTextField(
                 value = lokasi,
@@ -143,7 +137,6 @@ fun BuatLaporan(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // BUTTON PILIH FOTO
             Text("Foto Barang Rusak", color = Color.Gray)
             Button(
                 onClick = { showPicker = true },
@@ -158,7 +151,6 @@ fun BuatLaporan(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // PREVIEW GAMBAR
             if (imageUri != null) {
                 Image(
                     painter = rememberAsyncImagePainter(imageUri),
@@ -170,7 +162,6 @@ fun BuatLaporan(navController: NavController) {
 
             Spacer(Modifier.height(24.dp))
 
-            // KIRIM
             Button(
                 onClick = { showConfirm = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -182,7 +173,6 @@ fun BuatLaporan(navController: NavController) {
         }
     }
 
-    // Dialog pilih sumber foto
     if (showPicker) {
         AlertDialog(
             onDismissRequest = { showPicker = false },
@@ -203,7 +193,6 @@ fun BuatLaporan(navController: NavController) {
         )
     }
 
-    // Dialog konfirmasi upload
     if (showConfirm) {
         AlertDialog(
             onDismissRequest = { showConfirm = false },
@@ -246,9 +235,6 @@ fun BuatLaporan(navController: NavController) {
     }
 }
 
-// ================= UPLOAD FUNCTION =================
-
-// ================= UPLOAD FUNCTION FINAL =================
 suspend fun uploadLaporan(
     context: Context,
     title: String,
@@ -270,12 +256,10 @@ suspend fun uploadLaporan(
 
         val api = RetrofitClient.instance
 
-        // ===== RequestBody untuk teks =====
         val titleBody = title.toRequestBody("text/plain".toMediaTypeOrNull())
         val descBody = description.toRequestBody("text/plain".toMediaTypeOrNull())
         val locationBody = location.toRequestBody("text/plain".toMediaTypeOrNull())
 
-        // ===== Multipart file (opsional) =====
         val photoPart: MultipartBody.Part? = imageUri?.let { uri ->
             val file = File(getPathFromUri(context, uri))
             if (!file.exists() || file.length() == 0L) {
@@ -286,7 +270,6 @@ suspend fun uploadLaporan(
             MultipartBody.Part.createFormData("photo", file.name, request)
         }
 
-        // ===== Kirim ke API =====
         val response = api.createReport(
             token = "Bearer $token",
             title = titleBody,
@@ -298,7 +281,6 @@ suspend fun uploadLaporan(
         if (response.isSuccessful) {
             true
         } else {
-            // Bisa cek error dari backend
             val msg = response.errorBody()?.string()
             Toast.makeText(context, "Gagal: $msg", Toast.LENGTH_SHORT).show()
             false
@@ -311,14 +293,12 @@ suspend fun uploadLaporan(
     }
 }
 
-// ===== Fungsi bantu create URI kamera =====
 fun createImageUri(context: Context): Uri? {
     val time = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val file = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "IMG_$time.jpg")
     return FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
 }
 
-// ===== Fungsi bantu ambil path dari URI =====
 fun getPathFromUri(context: Context, uri: Uri): String {
     val inputStream = context.contentResolver.openInputStream(uri)
         ?: throw IllegalArgumentException("Tidak bisa membuka URI")

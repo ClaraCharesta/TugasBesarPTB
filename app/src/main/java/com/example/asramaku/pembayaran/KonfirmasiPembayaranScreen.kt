@@ -33,7 +33,7 @@ import java.io.File
 fun KonfirmasiPembayaranScreen(
     navController: NavController,
     viewModel: PaymentViewModel,
-    userId: Int,          // ⬅️ userId diteruskan langsung
+    userId: Int,
     bulan: String,
     total: Int
 ) {
@@ -50,14 +50,14 @@ fun KonfirmasiPembayaranScreen(
     val successMsg by viewModel.successMessage.collectAsState()
     val errorMsg by viewModel.errorMessage.collectAsState()
 
-    // ================= GALERI =================
+
     val pickImageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) selectedImageUri = uri
     }
 
-    // ================= KAMERA =================
+
     val tempCameraUri = remember { mutableStateOf<Uri?>(null) }
 
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -84,7 +84,7 @@ fun KonfirmasiPembayaranScreen(
         }
     }
 
-    // ================= UI =================
+
     Scaffold(
         bottomBar = { PaymentBottomBarKonfirmasi(navController) }
     ) { padding ->
@@ -96,7 +96,7 @@ fun KonfirmasiPembayaranScreen(
                 .background(Color(0xFFFFF0D5))
         ) {
 
-            // ---------- TOP BAR ----------
+
             TopAppBar(
                 title = { Text("Lakukan Pembayaran") },
                 navigationIcon = {
@@ -109,7 +109,7 @@ fun KonfirmasiPembayaranScreen(
                 )
             )
 
-            // ---------- CONTENT ----------
+
             Column(
                 modifier = Modifier
                     .padding(16.dp)
@@ -150,7 +150,7 @@ fun KonfirmasiPembayaranScreen(
                     Text("Pilih Foto / Kamera")
                 }
 
-                // PREVIEW GAMBAR
+
                 selectedImageUri?.let {
                     Image(
                         painter = rememberAsyncImagePainter(it),
@@ -169,12 +169,12 @@ fun KonfirmasiPembayaranScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
 
-                    // ================= KIRIM =================
+
                     Button(
                         onClick = {
                             viewModel.submitPayment(
                                 context = context,
-                                userId = userId,          // ⬅️ pakai parameter userId
+                                userId = userId,
                                 bulan = bulan,
                                 totalTagihan = total,
                                 buktiBayarUri = selectedImageUri
@@ -212,7 +212,7 @@ fun KonfirmasiPembayaranScreen(
         }
     }
 
-    // ================= DIALOG PILIH SUMBER =================
+
     if (showDialog && successMsg.isEmpty()) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -249,7 +249,7 @@ fun KonfirmasiPembayaranScreen(
         )
     }
 
-    // ================= SUCCESS =================
+
     if (showSuccessPopup) {
         AlertDialog(
             onDismissRequest = {},
@@ -272,7 +272,7 @@ fun KonfirmasiPembayaranScreen(
     }
 }
 
-// ================= BOTTOM BAR =================
+
 @Composable
 fun PaymentBottomBarKonfirmasi(navController: NavController) {
     NavigationBar(containerColor = Color(0xFFF3E6F7)) {

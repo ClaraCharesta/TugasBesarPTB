@@ -32,9 +32,7 @@ import java.time.format.DateTimeFormatter
 import java.net.HttpURLConnection
 import java.net.URL
 
-// ========================
-// UPDATE TANGGAL PIKET
-// ========================
+
 suspend fun updateTanggalPiket(slotId: Int, userId: Int, newTanggal: String): Boolean {
     return withContext(Dispatchers.IO) {
         try {
@@ -55,9 +53,7 @@ suspend fun updateTanggalPiket(slotId: Int, userId: Int, newTanggal: String): Bo
     }
 }
 
-// ========================
-// CALENDAR SCREEN KEREN
-// ========================
+
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,14 +79,14 @@ fun GantiPiketCalendarScreen(
 
     val currentMonth = remember { mutableStateOf(YearMonth.now()) }
 
-    // Generate tanggal-tanggal di bulan ini
+
     fun generateCalendarDates(month: YearMonth): List<LocalDate> {
         val firstDay = month.atDay(1)
         val lastDay = month.atEndOfMonth()
         val totalDays = firstDay.dayOfWeek.value % 7 // shift awal minggu
         val days = mutableListOf<LocalDate>()
 
-        // Kosongkan cell sebelum tanggal 1
+
         repeat(totalDays) { days.add(LocalDate.MIN) }
 
         for (day in 1..month.lengthOfMonth()) {
@@ -125,7 +121,7 @@ fun GantiPiketCalendarScreen(
             Text("Tanggal piket kadaluarsa: ${tanggalLama.format(formatter)}", fontSize = 16.sp)
             Spacer(Modifier.height(16.dp))
 
-            // ===== Navigasi Bulan =====
+
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -144,7 +140,7 @@ fun GantiPiketCalendarScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // ===== Header Hari =====
+
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                 listOf("M", "S", "S", "R", "K", "J", "S").forEach { day ->
                     Text(day, fontSize = 14.sp)
@@ -153,7 +149,7 @@ fun GantiPiketCalendarScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // ===== Kalender Grid =====
+
             val dates = generateCalendarDates(currentMonth.value)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(7),

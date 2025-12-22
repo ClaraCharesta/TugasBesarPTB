@@ -23,12 +23,10 @@ import com.example.asramaku.screens.PaymentViewModel
 fun StatusPembayaranScreen(
     navController: NavController,
     viewModel: PaymentViewModel,
-    userId: Int  // 🔹 ambil userId dari parameter
+    userId: Int
 ) {
 
-    // =========================
-    // DATA DARI API
-    // =========================
+
     val statusList by viewModel.statusList.collectAsState()
 
     val currentRoute = navController.currentBackStackEntry
@@ -72,9 +70,7 @@ fun StatusPembayaranScreen(
                         .padding(16.dp)
                 ) {
 
-                    // =========================
-                    // HEADER TABEL
-                    // =========================
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -87,9 +83,7 @@ fun StatusPembayaranScreen(
                         TableHeaderCell("Status Pembayaran", 0.4f)
                     }
 
-                    // =========================
-                    // DATA DARI DATABASE
-                    // =========================
+
                     LazyColumn(modifier = Modifier.fillMaxWidth()) {
                         itemsIndexed(statusList) { index, item ->
                             StatusPembayaranRow(
@@ -103,9 +97,7 @@ fun StatusPembayaranScreen(
             }
         }
 
-        // =========================
-        // TAB MENU
-        // =========================
+
         PaymentTabMenu(
             currentRoute = currentRoute,
             navController = navController,
@@ -115,9 +107,7 @@ fun StatusPembayaranScreen(
     }
 }
 
-// =========================
-// HEADER CELL
-// =========================
+
 @Composable
 fun RowScope.TableHeaderCell(text: String, weight: Float) {
     Box(
