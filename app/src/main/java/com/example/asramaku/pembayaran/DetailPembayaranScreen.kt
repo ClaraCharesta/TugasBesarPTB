@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.asramaku.screens.PaymentViewModel
@@ -37,7 +36,6 @@ fun DetailPembayaranScreen(
     val pembayaran by detailLiveData.observeAsState()
     var isLoading by remember { mutableStateOf(true) }
 
-    // 🔑 loading berhenti setelah response datang
     LaunchedEffect(pembayaran) {
         isLoading = false
     }
@@ -62,67 +60,74 @@ fun DetailPembayaranScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFFFF1D6))
-                .padding(padding),
-            contentAlignment = Alignment.Center
+                .padding(padding)
         ) {
 
-            when {
-                isLoading -> {
-                    CircularProgressIndicator()
-                }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp), // INI YANG MENGGESER KE ATAS
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
 
-                pembayaran != null -> {
-                    val data = pembayaran!!
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator()
+                    }
 
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFD8EAD7)
-                        )
-                    ) {
-                        Column(Modifier.padding(16.dp)) {
+                    pembayaran != null -> {
+                        val data = pembayaran!!
 
-                            Text("Bulan: ${data.bulan}")
-                            Text("Total: Rp ${data.totalTagihan}")
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFD8EAD7)
+                            )
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
 
-                            Row {
-                                Text("Status: ")
-                                Text(
-                                    data.status,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2E7D32)
-                                )
-                            }
+                                Text("Bulan: ${data.bulan}")
+                                Text("Total: Rp ${data.totalTagihan}")
 
-                            Spacer(Modifier.height(12.dp))
-                            Text("Bukti Pembayaran")
+                                Row {
+                                    Text("Status: ")
+                                    Text(
+                                        data.status,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2E7D32)
+                                    )
+                                }
 
-                            Spacer(Modifier.height(8.dp))
+                                Spacer(Modifier.height(12.dp))
+                                Text("Bukti Pembayaran")
 
-                            if (!data.buktiBayar.isNullOrEmpty()) {
-                                AsyncImage(
-                                    model = "http://10.0.2.2:3000${data.buktiBayar}",
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(180.dp),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Text("Bukti pembayaran tidak tersedia")
+                                Spacer(Modifier.height(8.dp))
+
+                                if (!data.buktiBayar.isNullOrEmpty()) {
+                                    AsyncImage(
+                                        model = "http://10.0.2.2:3000${data.buktiBayar}",
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(180.dp),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Text("Bukti pembayaran tidak tersedia")
+                                }
                             }
                         }
                     }
-                }
 
-                else -> {
-                    Text(
-                        "Data pembayaran tidak ditemukan",
-                        color = Color.Gray
-                    )
+                    else -> {
+                        Text(
+                            "Data pembayaran tidak ditemukan",
+                            color = Color.Gray
+                        )
+                    }
                 }
             }
         }

@@ -85,7 +85,7 @@ fun HomeScreen(
             showLocalNotification(
                 context,
                 "Selamat Datang",
-                "Halo $displayName, selamat datang di Asramaku!"
+                "Halo $displayName, selamat datang di Asramaku!, jangan lupa kerjakan jadwal piket yang telah tersedia"
             )
         }
     }
