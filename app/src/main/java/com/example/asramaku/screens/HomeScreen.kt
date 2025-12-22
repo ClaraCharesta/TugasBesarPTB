@@ -1,5 +1,9 @@
 package com.example.asramaku.screens
 
+import android.app.DownloadManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,7 +25,19 @@ import androidx.navigation.NavController
 import com.example.asramaku.R
 import com.example.asramaku.navigation.Screen
 import com.example.asramaku.data.preferences.UserPreferences
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.delay
+import android.util.Log
+import androidx.core.app.NotificationCompat
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import org.json.JSONObject
+import java.io.IOException
 
 @Composable
 fun HomeScreen(
@@ -50,6 +66,8 @@ fun HomeScreen(
     var showLogo by remember { mutableStateOf(false) }
     var showModules by remember { mutableStateOf(false) }
 
+    val scrollState = rememberScrollState()
+
     LaunchedEffect(Unit) {
         delay(150)
         showHeader = true
@@ -57,9 +75,20 @@ fun HomeScreen(
         showLogo = true
         delay(200)
         showModules = true
-    }
 
-    val scrollState = rememberScrollState()
+        // 🔹 AMBIL TOKEN FCM & KIRIM KE SERVER
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { fcmToken ->
+            Log.d("FCM_HOME", "Token FCM Home: $fcmToken")
+            sendHomeNotificationToken(userId, fcmToken)
+
+            // 🔔 Tampilkan notif lokal setiap Home dibuka
+            showLocalNotification(
+                context,
+                "Selamat Datang",
+                "Halo $displayName, selamat datang di Asramaku!"
+            )
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -162,7 +191,6 @@ fun HomeScreen(
                         navController.navigate(Screen.Report.createRoute(userId, displayName ?: "User"))
                     }
 
-
                     // 🔹 PIKET (✅ BENAR → DUTY MODULE)
                     ModuleItem(
                         title = "MODUL PIKET",
@@ -218,4 +246,57 @@ fun ModuleItem(
             )
         }
     }
+}
+
+// 🔹 FUNCTION KIRIM TOKEN FCM HOME KE SERVER
+private fun sendHomeNotificationToken(userId: Int, token: String) {
+    val json = JSONObject().apply {
+        put("userId", userId)
+        put("fcmToken", token)
+    }
+
+    val body = json.toString()
+        .toRequestBody("application/json; charset=utf-8".toMediaType())
+
+    val request = Request.Builder()
+        .url("http://10.0.2.2:3000/api/fcm/home/token")
+        .post(body) // <-- POST request
+        .build()
+
+    OkHttpClient().newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            Log.e("FCM_HOME_FAIL", "Gagal kirim token: ${e.message}")
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            Log.d("FCM_HOME_OK", "Token Home terkirim, response code: ${response.code}")
+        }
+    })
+
+}
+
+// 🔹 FUNCTION NOTIF LOKAL
+private fun showLocalNotification(context: android.content.Context, title: String, message: String) {
+    val channelId = "home_channel"
+    val notificationManager =
+        context.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            channelId,
+            "Home Notifications",
+            NotificationManager.IMPORTANCE_HIGH
+        )
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    val notification = NotificationCompat.Builder(context, channelId)
+        .setSmallIcon(R.drawable.ic_duty) // ganti dengan icon project
+        .setContentTitle(title)
+        .setContentText(message)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setAutoCancel(true)
+        .build()
+
+    notificationManager.notify(1001, notification)
 }

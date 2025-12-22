@@ -1,5 +1,6 @@
 package com.example.asramaku.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image
@@ -19,7 +20,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.asramaku.R
@@ -178,8 +178,15 @@ fun LoginScreen(
                                                                 fcmToken = fcmToken
                                                             )
                                                         )
+                                                        Log.d(
+                                                            "FCM_PIKET",
+                                                            "Token piket berhasil dikirim"
+                                                        )
                                                     } catch (e: Exception) {
-                                                        e.printStackTrace()
+                                                        Log.e(
+                                                            "FCM_PIKET_FAIL",
+                                                            e.message.toString()
+                                                        )
                                                     }
                                                 }
 
@@ -274,8 +281,13 @@ private fun sendPaymentToken(userId: Int, token: String) {
         .build()
 
     OkHttpClient().newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {}
-        override fun onResponse(call: Call, response: Response) {}
+        override fun onFailure(call: Call, e: IOException) {
+            Log.e("FCM_PAYMENT_FAIL", "Failed to send payment token: ${e.message}")
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            Log.d("FCM_PAYMENT_OK", "Payment token sent, response code: ${response.code}")
+        }
     })
 }
 
@@ -297,7 +309,12 @@ private fun sendReportToken(userId: Int, token: String) {
         .build()
 
     OkHttpClient().newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {}
-        override fun onResponse(call: Call, response: Response) {}
+        override fun onFailure(call: Call, e: IOException) {
+            Log.e("FCM_REPORT_FAIL", "Failed to send report token: ${e.message}")
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            Log.d("FCM_REPORT_OK", "Report token sent, response code: ${response.code}")
+        }
     })
 }

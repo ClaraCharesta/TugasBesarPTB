@@ -66,7 +66,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-messaging")
 
-    implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
+    implementation("com.google.firebase:firebase-analytics-ktx:21.3.0")
     implementation("com.google.firebase:firebase-messaging-ktx")
     //noinspection UseTomlInstead
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")

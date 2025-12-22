@@ -15,12 +15,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.asramaku.ui.theme.*
+import com.example.asramaku.ui.theme.DarkTeal
+import com.example.asramaku.ui.theme.LightYellow
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
+import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,7 +148,16 @@ private fun sendReportNotification(userId: Int) {
         .build()
 
     OkHttpClient().newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {}
-        override fun onResponse(call: Call, response: Response) {}
+        override fun onFailure(call: Call, e: IOException) {
+            Log.e("FCM_REPORT", "Gagal kirim notif report: ${e.message}")
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            if (response.isSuccessful) {
+                Log.d("FCM_REPORT", "✅ Notifikasi report dikirim")
+            } else {
+                Log.e("FCM_REPORT", "❌ Gagal kirim notif report: ${response.message}")
+            }
+        }
     })
 }

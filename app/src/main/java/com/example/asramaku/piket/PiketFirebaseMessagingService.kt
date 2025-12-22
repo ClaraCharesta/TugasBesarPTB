@@ -87,13 +87,14 @@ class PiketFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     // ===============================
-    // 💰 NOTIF PAYMENT (BARU, AMAN)
+    // 💰 NOTIF PAYMENT (DIPERBAIKI, AMAN UNTUK DATA-ONLY & NOTIF)
     // ===============================
     private fun handlePaymentNotification(message: RemoteMessage) {
         createPaymentChannel()
 
-        val title = message.notification?.title ?: "Tagihan Pembayaran"
-        val body = message.notification?.body ?: "Ada tagihan yang belum dibayar"
+        // Ambil title & body dari data dulu, fallback ke notification
+        val title = message.data["title"] ?: message.notification?.title ?: "Tagihan Pembayaran"
+        val body = message.data["body"] ?: message.notification?.body ?: "Ada tagihan yang belum dibayar"
 
         val notification = NotificationCompat.Builder(this, PAYMENT_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_payment)
